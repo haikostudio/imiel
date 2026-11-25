@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.1",
   "license": "AGPL-3.0-only",
-  "description": "Application iPhone iMiel : coquille Capacitor (imiel.example.com) + widgets WidgetKit. Projet Xcode genere par XcodeGen (ios/project.yml).",
+  "description": "Application iPhone iMiel : coquille Capacitor (serveur iMiel choisi, scripts/poser-serveur.mjs) + widgets WidgetKit. Projet Xcode genere par XcodeGen (ios/project.yml).",
   "scripts": {
     "ios:project": "cd ios && xcodegen generate",
     "check": "node scripts/verifier-projet-ios.mjs"

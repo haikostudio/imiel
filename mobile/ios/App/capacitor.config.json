@@ -4,7 +4,10 @@
   "webDir": "public",
   "server": {
     "url": "https://imiel.example.com",
-    "allowNavigation": ["imiel.example.com", "imiel.example.com"]
+    "allowNavigation": [
+      "imiel.example.com",
+      "imiel.example.com"
+    ]
   },
   "appendUserAgent": "iMielApp/1",
   "ios": {
