@@ -1,0 +1,9 @@
+node_modules/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/Cargo.lock
+
+# dist/ est ignore par le .gitignore racine, mais Tauri (frontendDist) en a
+# besoin : on re-inclut le placeholder embarque.
+!dist/
+!dist/index.html

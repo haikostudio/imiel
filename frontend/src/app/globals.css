@@ -1,0 +1,681 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-system);
+  --font-mono: var(--font-mono-system);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-unread: var(--unread);
+  --color-starred: var(--starred);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-mine: var(--mine);
+  --color-mine-foreground: var(--mine-foreground);
+  --color-tracking: var(--tracking);
+  --color-note: var(--note);
+  --color-note-foreground: var(--note-foreground);
+  --color-note-strong: var(--note-strong);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+:root {
+  /* Rayon de base de la charte (maquettes 2026-10) : boutons 12px, cartes
+     rounded-2xl/3xl (20/24px). Les pastilles et champs sont rounded-full. */
+  --radius: 0.75rem;
+
+  /* Fonts */
+  --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono-system: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* Base colors */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.145 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  /* Surfaces grises des maquettes : champ de recherche, pastilles, pictos
+     ronds, bulles des autres. Un seul gris de surface pour toute l'app. */
+  --secondary: oklch(0.965 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.965 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.965 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  /* Filets tres clairs (bord des cartes, separateurs de lignes). */
+  --border: oklch(0.93 0 0);
+  --input: oklch(0.93 0 0);
+  --ring: oklch(0.708 0 0);
+
+  /* Chart colors */
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+
+  /* Sidebar */
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.145 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.965 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.93 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Status colors. Non lu = POINT NOIR (charte monochrome des maquettes) :
+     la ligne inversee noire (--unread-row) a disparu. */
+  --unread: oklch(0.145 0 0);
+  --starred: oklch(0.795 0.184 86.047);
+  --success: oklch(0.648 0.2 145.737);
+  --warning: oklch(0.75 0.183 55.934);
+  --danger: oklch(0.577 0.245 27.325);
+
+  /* Bleu clair du PREMIER mail de la conversation quand il est envoye par
+     l'utilisateur : repere d'une conversation entamee par lui (choix
+     utilisateur 2026-10-17). Ses autres mails restent noirs (primary). */
+  --mine: oklch(0.93 0.04 245);
+  --mine-foreground: oklch(0.24 0.04 255);
+
+  /* Icone de suivi quand la conversation est suivie : jaune franc (le
+     --warning est orange). Assez sature pour rester lisible sur blanc. */
+  --tracking: oklch(0.8 0.17 88);
+  /* Notes IA d'une conversation : bulle violet clair a texte noir (meme
+     teinte en clair et en sombre, choix utilisateur 2026-10-18) ; --note-strong
+     = le violet des icones et boutons (lisible sur fond clair). */
+  --note: oklch(0.89 0.07 300);
+  --note-foreground: oklch(0.15 0 0);
+  --note-strong: oklch(0.58 0.2 300);
+}
+
+.dark {
+  /* Base colors */
+  /* Meme charte en inverse : fond presque noir, cartes un cran au-dessus,
+     surfaces grises 0.25, boutons principaux blancs. */
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.185 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.96 0 0);
+  --primary-foreground: oklch(0.175 0 0);
+  --secondary: oklch(0.25 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.25 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.25 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+
+  /* Chart colors */
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+
+  /* Sidebar */
+  --sidebar: oklch(0.145 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.96 0 0);
+  --sidebar-primary-foreground: oklch(0.175 0 0);
+  --sidebar-accent: oklch(0.25 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+
+  /* Status colors (non lu = point blanc en sombre) */
+  --unread: oklch(0.985 0 0);
+  --starred: oklch(0.828 0.189 84.429);
+  --success: oklch(0.696 0.17 162.48);
+  --warning: oklch(0.795 0.184 86.047);
+  --danger: oklch(0.704 0.191 22.216);
+
+  /* Premier mail entame par l'utilisateur : bleu sombre desature, texte clair */
+  --mine: oklch(0.34 0.06 250);
+  --mine-foreground: oklch(0.96 0.01 250);
+  --tracking: oklch(0.86 0.16 92);
+  --note: oklch(0.89 0.07 300);
+  --note-foreground: oklch(0.15 0 0);
+  --note-strong: oklch(0.76 0.14 300);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  /* Body en FLUX NORMAL avec hauteur plein ecran (100dvh), PAS position:fixed.
+     Raison (PWA standalone iOS, viewport-fit=cover) :
+     un body `position:fixed; inset:0` sort tout le contenu du flux -> la hauteur
+     du document s'effondre -> iOS calcule un viewport de positionnement fixe (ICB)
+     TROP COURT en bas (il exclut la bottom safe-area). Resultat : le body fixe ET
+     les overlays Radix `fixed inset-0` ne descendent pas jusqu'en bas -> bande
+     blanche incoercible sous l'app (le voile des modales ne couvre meme pas le
+     bas). Un body en flux normal avec une vraie hauteur (100dvh) donne un document
+     de hauteur reelle -> ICB correct -> les `fixed inset-0` couvrent tout l'ecran
+     jusqu'au home indicator. C'est la structure de la PWA Eloya (qui marche). Le
+     scroll vit dans les conteneurs internes (overflow-y-auto) ; le body reste
+     overflow:hidden (pas de rebond elastique au niveau body). body.clientHeight
+     reflete cette hauteur plein ecran, lue en JS pour --app-height (layout.tsx). */
+  body {
+    @apply bg-background text-foreground overflow-hidden;
+    /* Hauteur plein ecran FIABLE. Piege iOS standalone (black-translucent) :
+       innerHeight / 100dvh / clientHeight / visualViewport SOUS-ESTIMENT l'ecran
+       de l'inset HAUT au chargement a froid -> la hauteur tombe courte et, comme
+       elle est ancree en haut, le manque se reporte en BANDE BLANCHE EN BAS
+       (corrige seulement apres une rotation). --app-height est pose en JS a
+       window.screen.height (constante de l'ecran, immunisee contre ce bug) en PWA
+       standalone ; en onglet navigateur --app-height n'est pas pose -> fallback
+       100dvh (dynamique, gere la barre d'URL sans a-coup). Ancienne icone en
+       "default" (web view SOUS la barre d'etat, encart haut 0) : innerHeight,
+       car screen.height deborderait de la hauteur de la barre d'etat. */
+    height: 100vh;                      /* fallback navigateurs sans dvh */
+    height: 100dvh;                     /* onglet navigateur (dynamique) */
+    height: var(--app-height, 100dvh);  /* PWA standalone : screen.height (JS) */
+    overscroll-behavior: none;
+    font-family: var(--font-system);
+  }
+  /* Filet de securite si le JS ne pose pas --app-height : en PWA standalone, 100vh
+     = LARGE viewport = plein ecran (pas de barre d'URL a retrancher), plus fiable
+     que 100dvh qui sous-estime au chargement a froid -> bande blanche en bas.
+     (= la logique `min-h-screen`/100vh de la PWA Eloya en standalone.) */
+  @media (display-mode: standalone) {
+    body {
+      height: 100vh;
+      height: var(--app-height, 100vh);
+    }
+  }
+}
+
+/* UI scale : taille de base (rem) de TOUTE l'interface (texte, paddings,
+   icones en rem). Memes valeurs sur telephone et ordinateur : le telephone
+   suit le reglage "Taille de l'interface" (plus de taille forcee sous 768px).
+   Petite = 14px (defaut, aussi avant que le JS ne pose data-ui-scale),
+   Moyenne = 15px, Grande = 16.5px. Hors @layer pour primer sur Tailwind. */
+:root,
+html,
+:root[data-ui-scale="small"],
+html[data-ui-scale="small"] {
+  font-size: 14px;
+}
+:root[data-ui-scale="medium"],
+html[data-ui-scale="medium"] {
+  font-size: 15px;
+}
+:root[data-ui-scale="large"],
+html[data-ui-scale="large"] {
+  font-size: 16.5px;
+}
+
+/* Animation slide-in pour les nouveaux messages */
+@keyframes message-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem);
+  }
+}
+
+.animate-message-slide-in {
+  animation: message-slide-in 0.35s ease-out;
+}
+
+/* Animation slide-out pour les messages retires (suppression, blocage...).
+   Duree synchronisee avec REMOVAL_ANIM_MS (mail-store.ts) : la ligne glisse
+   vers la gauche et s'efface avant d'etre purgee des donnees. */
+@keyframes message-slide-out {
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+.animate-message-slide-out {
+  animation: message-slide-out 0.3s ease-in forwards;
+  pointer-events: none;
+}
+
+/* Barre de progression indeterminee pour la recherche (palette Cmd+K) :
+   un segment d'1/3 traverse la barre en boucle, style Gmail/material.
+   Le @keyframes doit etre defini globalement pour que la classe Tailwind
+   arbitraire `animate-[search-progress_...]` y resolve. */
+@keyframes search-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+/* h-dvh / min-h-dvh = 100% du body. Le body fait 100dvh (flux normal, plein
+   ecran en PWA standalone) -> height:100% colle exactement au body, sans
+   dependre d'une unite de viewport reevaluee dans chaque enfant.
+   --keyboard-inset = max(0, innerHeight - visualViewport.height) : > 0
+   uniquement quand le clavier virtuel est visible. A appliquer en
+   padding-bottom sur les conteneurs qui doivent rester au-dessus du clavier
+   (composer, reply box). */
+/* Radix scroll-lock : react-remove-scroll-bar (Dialog, DropdownMenu, Select,
+   Popover...) pose au runtime `body[data-scroll-locked]{ position: relative;
+   top: -<scrollY>px }` pour figer le scroll a l'ouverture d'un overlay. Notre
+   body n'a PLUS de scroll propre (overflow:hidden, le scroll vit dans les
+   conteneurs internes) -> scrollY=0 -> ce `top` vaut deja 0. On neutralise
+   quand meme position/top par securite (l'app ne doit pas bouger a l'ouverture
+   d'un overlay). IMPORTANT : ne PAS re-fixer le body ici (un body `position:
+   fixed` re-effondre la hauteur du document -> ICB trop court -> bande blanche
+   en bas, cf. la regle `body` ci-dessus). La hauteur 100dvh du body reste posee
+   par la regle de base. */
+html body[data-scroll-locked] {
+  position: static !important;
+  top: auto !important;
+}
+
+.h-dvh {
+  height: 100%;
+}
+.min-h-dvh {
+  min-height: 100%;
+}
+.kb-inset-bottom {
+  padding-bottom: var(--keyboard-inset, 0px);
+}
+
+/* Element en position sticky ancre au-dessus du clavier virtuel : se cale a
+   keyboard-inset du bas du scrollport (0 quand le clavier est ferme, donc
+   bottom:0 normal sur desktop et mobile clavier ferme). Sert a la reply box
+   inline du thread pour rester juste au-dessus du clavier sans que iOS ait a
+   scroller toute la couche. */
+.kb-sticky-bottom {
+  bottom: var(--keyboard-inset, 0px);
+}
+
+/* Quand le clavier virtuel est ouvert (champ focus), on masque le bouton
+   "Repondre" mobile du thread : il est redondant avec l'editeur inline ouvert
+   et son padding clavier pousserait la reply box trop haut (double decalage). */
+.kb-open [data-ref="thread-page-footer"] {
+  display: none;
+}
+
+/* Safe area insets for iPhone notch/Dynamic Island et PWA mobile.
+   safe-area-bottom inclut aussi le --keyboard-inset pour que les conteneurs
+   ancres en bas (composer, reply box, footer) remontent automatiquement
+   au-dessus du clavier virtuel iOS. */
+/* --app-top : LE decalage haut de toute l'app (en-tete, recherche plein ecran,
+   reglages, visionneuse, tiroirs). Toute regle qui cale un HAUT passe par cette
+   variable, jamais par env(safe-area-inset-top) directement.
+   = env(safe-area-inset-top) partout (0 en onglet navigateur), + --edge-clear
+   sur iPhone installe en portrait, pour sortir le contenu du flou d'iOS. */
+:root {
+  --edge-clear: 0px;
+  --app-top: calc(env(safe-area-inset-top, 0px) + var(--edge-clear));
+}
+
+.safe-area-top {
+  padding-top: var(--app-top);
+}
+
+/* iOS 26/27, app INSTALLEE, barre d'etat "black-translucent" (cf app/layout.tsx) :
+   la web view passe sous l'heure ; fonds, menu de gauche, volets et voiles
+   montent jusqu'en haut de l'ecran, d'une seule teinte. Le systeme pose un
+   degrade flou ("scroll edge effect") sous l'encart, qu'aucun CSS n'eteint :
+   invisible sur une surface unie, il ne doit passer sur aucun texte ni icone.
+   --edge-clear descend le contenu sous ce flou.
+   Historique : 7px = le flou effleurait l'en-tete ; 28px = ecart trop grand ;
+   20px servi le 2026-10-18 ; 24px choisi le 2026-10-19 ("un peu plus grand") ;
+   19px le 2026-10-19 (24px un peu loin : app remontee de 5px).
+   Barre "default" (75c523c puis a28e1bc + 65fbf03) ABANDONNEE : la bande de
+   l'heure reste blanche sous les voiles, aucun echantillonnage ne la recolore.
+   NE PAS revenir : ni a un --app-top plus petit que l'encart (contenu dans le
+   flou), ni a une bande opaque sous l'heure, ni au style "default".
+   Invisible en emulation Chrome (-webkit-touch-callout = iOS). */
+@supports (-webkit-touch-callout: none) {
+  @media (display-mode: standalone) and (orientation: portrait) {
+    :root {
+      --edge-clear: 19px;
+    }
+  }
+}
+
+.safe-area-bottom {
+  padding-bottom: calc(var(--keyboard-inset, 0px) + env(safe-area-inset-bottom, 0px));
+}
+
+/* iOS Safari : les champs date/heure natifs (<input type="datetime-local">, etc.)
+   ont une largeur intrinseque + des marges internes (::-webkit-date-and-time-value)
+   qui les font DEBORDER de leur conteneur (ex: la modale "Programmer l'envoi").
+   On force le champ a se reduire (min-width:0 + max-width:100%) et on neutralise
+   la marge/le padding des pseudo-elements natifs pour qu'il tienne dans la modale. */
+input[type="datetime-local"],
+input[type="date"],
+input[type="time"],
+input[type="month"],
+input[type="week"] {
+  min-width: 0;
+  max-width: 100%;
+}
+input[type="datetime-local"]::-webkit-date-and-time-value,
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  margin: 0;
+  min-width: 0;
+  text-align: left;
+}
+input[type="datetime-local"]::-webkit-datetime-edit,
+input[type="date"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit {
+  padding: 0;
+}
+
+/* Pager calendrier (mois/semaine/annee) : defilement infini scroll-snap entre
+   periodes. On masque la barre de scroll (le snap suffit visuellement). */
+.calendar-pager {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior: contain;
+}
+.calendar-pager::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tiroirs du bas sur telephone : leur bord haut s'arrete PILE sous le flou
+   de la barre d'etat (var(--app-top) ; 0 en onglet navigateur). --app-height =
+   hauteur de la web view en PWA standalone (screen.height si elle passe sous
+   la barre d'etat, innerHeight sinon, cf app/layout.tsx), 100dvh sinon.
+   sheet-h-full : tiroir-ecran (assistant, edition d'un rendez-vous) ;
+   sheet-max-h : plafond d'un menu qui garde la taille de son contenu.
+   Jamais sur un tiroir CONFINE au volet de lecture (ordinateur). */
+@utility sheet-h-full {
+  height: calc(var(--app-height, 100dvh) - var(--app-top, 0px));
+}
+@utility sheet-max-h {
+  max-height: calc(var(--app-height, 100dvh) - var(--app-top, 0px));
+}
+
+/* Filet de separation d'une ligne de liste (mails, suivis, vue d'ensemble) :
+   pose en ::after (l'element doit etre `relative`), il court entre les marges
+   de la ligne (10px telephone, 1rem ordinateur) et s'efface en fondu
+   transparent sur 30px a chaque bout (choix utilisateur 2026-10-19). Jeton
+   --border : suit le theme sombre. Marge forcee : `[--row-divider-inset:1rem]`. */
+@utility row-divider {
+  &::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    bottom: 0;
+    left: var(--row-divider-inset, 10px);
+    right: var(--row-divider-inset, 10px);
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--border) 30px,
+      var(--border) calc(100% - 30px),
+      transparent
+    );
+  }
+  @variant md {
+    &::after {
+      left: var(--row-divider-inset, 1rem);
+      right: var(--row-divider-inset, 1rem);
+    }
+  }
+}
+
+/* Compose sheet mobile : occupe uniquement la zone visible au-dessus du
+   clavier virtuel. On ancre le bas du sheet au sommet du clavier
+   (bottom = keyboard-inset) et on retranche la hauteur du clavier, sinon le
+   sheet fixe (bottom-0, hauteur = innerHeight) deborde derriere le clavier et
+   iOS scrolle toute la couche fixe pour reveler le champ focus -> le sheet se
+   retrouve a moitie hors ecran. Ici le champ reste toujours visible, iOS n'a
+   donc rien a scroller. La reserve du bas (barre d'accueil) est posee UNE
+   seule fois, par le corps du tiroir (ComposeSheet) : la compter aussi ici
+   laissait une bande vide sous "Envoyer" (doublee clavier ouvert, iOS gardant
+   safe-area-inset-bottom=34px meme avec le clavier). */
+.compose-sheet-mobile {
+  /* Tiroir a HAUTEUR MAX (comme les autres drawers) : on l'ancre a top+bottom
+     plutot qu'en plein ecran. Le bord haut s'arrete pile sous la status bar /
+     l'encoche (jamais dessous). Ancrage (pas de hauteur calculee) = immunise
+     contre les unites viewport iOS. */
+  top: var(--app-top, 0px);
+  bottom: var(--keyboard-inset, 0px);
+  /* Clavier ouvert : bottom remonte a keyboard-inset, top reste -> la hauteur se
+     reduit d'elle-meme, le tiroir ne deborde jamais derriere le clavier. */
+}
+
+/* Zone de prise d'un tiroir vaul `handleOnly` (DrawerHandle). vaul injecte un
+   CSS NON layere qui fait de [data-vaul-handle] une pastille 32x5px grise et de
+   sa zone de clic un carre centre en absolu : on le neutralise ici (HORS @layer,
+   specificite 0,2,0) pour que la prise couvre ses enfants (poignee + en-tete).
+   touch-action:none = le geste vertical reste a vaul (pan-y ferait partir un
+   pointercancel natif et le tiroir ne suivrait pas le doigt). */
+.drawer-handle-area[data-vaul-handle] {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  border-radius: 0;
+  background: transparent;
+  opacity: 1;
+  touch-action: none;
+}
+.drawer-handle-area[data-vaul-handle] > [data-vaul-handle-hitarea] {
+  position: static;
+  display: block;
+  transform: none;
+  width: 100%;
+  height: auto;
+}
+/* Tiroir de redaction (vaul `handleOnly`) : vaul pose touch-action:none sur TOUT
+   le tiroir. Seule la poignee (ci-dessus) en a besoin ; sur le reste on rend la
+   main au navigateur pour que le corps defile nativement sur iPhone (#2429). */
+.compose-sheet-mobile[data-vaul-drawer] {
+  touch-action: auto;
+}
+/* Meme regle pour les autres tiroirs `handleOnly` dont le contenu defile
+   (tiroir d'un message, version HTML, Details de la conversation). */
+.drawer-scroll-native[data-vaul-drawer] {
+  touch-action: auto;
+}
+
+/* Message du fil : l'appui long ouvre son tiroir d'actions. Au doigt
+   seulement, ni loupe / menu iOS ni selection de texte (la copie passe par
+   "Copier le texte") ; a la souris la selection reste possible. */
+@media (pointer: coarse) {
+  .message-touch-surface {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* PAS de plancher (max(env, 1rem)) sur la safe-area haute : --app-top vaut
+   env(safe-area-inset-top) (+ --edge-clear sur iPhone installe), et 0 en
+   onglet navigateur, ou le chrome du navigateur fournit deja l'espace. */
+
+/* ------------------------------------------------ Tirer pour rafraichir */
+/* Pastille + spinner qui glisse depuis le haut de la liste quand on la tire
+   vers le bas (recette PWA HaikoNote). Pilotee par VirtualMailList via les
+   variables --ptr-*. Le contenu de la liste est translate en dessous ; cette
+   pastille est un overlay absolu centre horizontalement. */
+.ptr {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  z-index: 12;
+  width: 34px;
+  height: 34px;
+  margin-left: -17px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.16);
+  pointer-events: none;
+  opacity: var(--ptr-o, 0);
+  transform: translateY(var(--ptr-y, 0px)) scale(var(--ptr-s, 0.6));
+}
+
+/* Retour elastique : on n'anime QUE quand le doigt est leve (sinon le suivi du
+   geste serait saccade par la transition). */
+.ptr--snap {
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.22s ease;
+}
+
+.ptr__icon {
+  transform: rotate(var(--ptr-r, 0deg));
+}
+
+/* Pendant le rechargement : rotation continue, on ignore l'angle du geste. */
+.ptr--spin .ptr__icon {
+  transform: none;
+  animation: ptr-spin 0.8s linear infinite;
+}
+
+@keyframes ptr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Contenu de la liste pousse vers le bas pendant le tirage. */
+.ptr-content--snap {
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Editeur TipTap (compose/reponse) : les classes "prose" n'ont aucun effet
+   (pas de plugin @tailwindcss/typography installe) et le preflight Tailwind
+   retire list-style/marges des ul/ol/p. Resultat : un collage de texte riche
+   garde bien sa structure HTML (ul/li/p poses par ProseMirror) mais s'affiche
+   comme du texte plat, sans puces ni espacement. On restaure ici le minimum
+   visuel, scope au ProseMirror de l'editeur pour ne pas toucher le rendu des
+   mails recus (qui portent leurs propres styles inline). */
+.ProseMirror p {
+  margin: 0.5em 0;
+}
+
+.ProseMirror p:first-child {
+  margin-top: 0;
+}
+
+.ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.ProseMirror ul {
+  list-style: disc;
+}
+
+.ProseMirror ol {
+  list-style: decimal;
+}
+
+.ProseMirror li {
+  margin: 0.15em 0;
+}
+
+.ProseMirror li p {
+  margin: 0;
+}
+
+
+/* ------------------------------------------------ Charte des maquettes */
+/* Rangees horizontales de pastilles (filtres, onglets) : defilement lateral
+   sans barre visible. */
+.chip-row {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.chip-row::-webkit-scrollbar {
+  display: none;
+}
+
+/* Invitation du champ texte (extension Placeholder de TipTap) : l'extension
+   pose data-placeholder sur le premier paragraphe vide, cette regle l'affiche
+   ("Ecrivez votre message..."). Sans elle, le champ vide restait muet. */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--muted-foreground);
+}
+
+/* Telephone : la barre d'actions du pied (MobileFooterBar, fixe, en portail)
+   reserve sa hauteur en bas de la zone principale tant qu'elle est montee
+   (<html data-mobile-footer>) : la fin des listes n'est jamais cachee. */
+@media (max-width: 767px) {
+  html[data-mobile-footer] [data-ref="app-main"] {
+    padding-bottom: calc(3.5rem + max(0.5rem, env(safe-area-inset-bottom)));
+  }
+}
+
+/* Minimaliste SOMBRE : la fenetre de redaction flottante se fondait dans la
+   page (fond identique, bordure a 10 %, ombre invisible sur le noir). Lisere
+   clair + ombre profonde pour la detacher ; le clair ne change pas. (Miel
+   sombre : app/miel.css.) */
+:root.dark:not([data-design="miel"]) [data-ref="compose-panel"] {
+  box-shadow:
+    0 0 0 1px oklch(1 0 0 / 16%),
+    0 -10px 50px rgb(0 0 0 / 0.65),
+    0 30px 80px rgb(0 0 0 / 0.75);
+}
+:root.dark:not([data-design="miel"]) [data-ref="compose-panel-titlebar"] {
+  background: oklch(0.235 0 0);
+}

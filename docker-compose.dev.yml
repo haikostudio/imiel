@@ -1,0 +1,20 @@
+services:
+  rspamd:
+    image: rspamd/rspamd:latest
+    ports:
+      - "11334:11334"
+    volumes:
+      - ./backend/rspamd/local.d:/etc/rspamd/local.d:ro
+      - ./backend/rspamd/override.d:/etc/rspamd/override.d:ro
+      - rspamd_dev_data:/var/lib/rspamd
+    restart: unless-stopped
+    networks:
+      - dev-infra
+
+volumes:
+  rspamd_dev_data:
+
+networks:
+  dev-infra:
+    external: true
+    name: dev-infra

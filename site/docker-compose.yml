@@ -1,0 +1,20 @@
+# Vitrine getimiel.com derriere Traefik (serveur Haiko-Clients). PREPARE, NON DEPLOYE :
+# la mise en ligne et les DNS se font sur decision de l'utilisateur.
+services:
+  vitrine:
+    build: .
+    restart: unless-stopped
+    networks: [traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.getimiel.rule=Host(`getimiel.com`) || Host(`www.getimiel.com`)
+      - traefik.http.routers.getimiel.entrypoints=websecure
+      - traefik.http.routers.getimiel.tls.certresolver=letsencrypt
+      - traefik.http.routers.getimiel.middlewares=getimiel-www
+      - traefik.http.middlewares.getimiel-www.redirectregex.regex=^https://www\.getimiel\.com/(.*)
+      - traefik.http.middlewares.getimiel-www.redirectregex.replacement=https://getimiel.com/$${1}
+      - traefik.http.middlewares.getimiel-www.redirectregex.permanent=true
+      - traefik.http.services.getimiel.loadbalancer.server.port=80
+networks:
+  traefik:
+    external: true

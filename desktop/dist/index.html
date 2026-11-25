@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>iMiel</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #000; color: #fff;
+        font-family: system-ui, sans-serif; display: grid; place-items: center; }
+      .spinner { width: 28px; height: 28px; border: 3px solid rgba(255,255,255,.25);
+        border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <!-- Placeholder embarque : la fenetre charge en realite imiel.example.com
+         (configure dans src-tauri/src/main.rs). Ce fichier sert uniquement de
+         frontendDist requis par le bundler Tauri. -->
+    <div class="spinner" aria-label="Chargement d'iMiel"></div>
+  </body>
+</html>

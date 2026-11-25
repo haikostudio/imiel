@@ -1,0 +1,29 @@
+name: iMielSpike
+options:
+  bundleIdPrefix: studio.haiko.spike
+  deploymentTarget:
+    iOS: "17.0"
+targets:
+  iMielSpike:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - path: pb_migrations
+        type: folder
+        buildPhase: resources
+      - path: pb_hooks
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - framework: Pbmobile.xcframework
+        embed: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: studio.haiko.spike.imiel
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        CODE_SIGNING_ALLOWED: NO
+        SWIFT_VERSION: "5.0"
+        # le resolveur DNS de Go (net) appelle res_9_* : libresolv doit etre liee
+        OTHER_LDFLAGS: "-lresolv"

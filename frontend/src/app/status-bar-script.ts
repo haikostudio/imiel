@@ -1,0 +1,12 @@
+// Script bloquant du <head> (app/layout.tsx) : theme-color + color-scheme.
+//
+// Les deux suivent le THEME de l'app (.dark), pas l'OS. En black-translucent,
+// color-scheme pilote la couleur du TEXTE de la barre d'etat iOS (clair =>
+// texte sombre, sombre => texte clair) ; theme-color = fond reel du body (pour
+// les navigateurs qui le lisent), normalise en rgb par un canvas 1x1 (oklch).
+// Recalcul a la bascule de theme (.dark) et a prefers-color-scheme en "system".
+//
+// La bande d'echantillonnage #hm-barre-haut et les variantes d'essai A/B/C/D
+// (65fbf03) ont ete RETIREES le 2026-10-19 : en barre "default" iOS dessine la
+// bande de l'heure hors de la web view et ne l'a jamais recoloree.
+export const STATUS_BAR_SCRIPT = `(function(){var cv=null;function toRgb(c){try{if(!cv){cv=document.createElement('canvas');cv.width=cv.height=1;}var x=cv.getContext('2d');if(!x)return c;x.clearRect(0,0,1,1);x.fillStyle='#000';x.fillStyle=c;x.fillRect(0,0,1,1);var d=x.getImageData(0,0,1,1).data;return 'rgb('+d[0]+','+d[1]+','+d[2]+')';}catch(e){return c;}}var pend=false;function q(){if(pend)return;pend=true;requestAnimationFrame(function(){pend=false;tc();});}function tc(){try{var ms=document.querySelectorAll('meta[name="theme-color"]');if(ms.length===0){var mm=document.createElement('meta');mm.setAttribute('name','theme-color');document.head.appendChild(mm);ms=[mm];}var dark=document.documentElement.classList.contains('dark');var bg='';try{if(document.body)bg=getComputedStyle(document.body).backgroundColor;}catch(e){}if(!bg||bg==='transparent'||bg==='rgba(0, 0, 0, 0)')bg=dark?'#0a0a0a':'#ffffff';bg=toRgb(bg);for(var i=0;i<ms.length;i++){if(ms[i].hasAttribute('media'))ms[i].removeAttribute('media');if(ms[i].getAttribute('content')!==bg)ms[i].setAttribute('content',bg);}var csm=document.querySelector('meta[name="color-scheme"]');if(!csm){csm=document.createElement('meta');csm.setAttribute('name','color-scheme');document.head.appendChild(csm);}csm.setAttribute('content',dark?'dark':'light');document.documentElement.style.colorScheme=dark?'dark':'light';}catch(e){}}if(document.readyState!=='loading')tc();document.addEventListener('DOMContentLoaded',tc);window.addEventListener('load',tc);try{new MutationObserver(q).observe(document.documentElement,{attributes:true,attributeFilter:['class','data-design']});}catch(e){}try{window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',function(){setTimeout(tc,50);});}catch(e){}})()`;

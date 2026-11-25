@@ -1,0 +1,17 @@
+{
+  "name": "imiel",
+  "version": "0.1.0",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n worker,next,translate -c yellow,green,magenta \"npm run dev:worker\" \"npm run dev:next\" \"npm run dev:translate\"",
+    "dev:pb": "cd backend && ./pocketbase serve --http=127.0.0.1:8090 --dir=./pb_data --hooksDir=./pb_hooks --migrationsDir=./pb_migrations",
+    "dev:worker": "npm run dev --prefix backend/mail-worker",
+    "dev:next": "npm run dev --prefix frontend",
+    "dev:translate": "libretranslate --host 127.0.0.1 --port 5000 --disable-web-ui",
+    "dev:rspamd": "docker compose -f docker-compose.dev.yml up"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

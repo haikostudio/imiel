@@ -1,0 +1,16 @@
+{
+  "name": "imiel-desktop",
+  "version": "1.0.5",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "description": "iMiel desktop app (Tauri wrapper around imiel.example.com)",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "icon": "tauri icon"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

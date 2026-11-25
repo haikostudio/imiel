@@ -1,0 +1,27 @@
+/** Domaines de messagerie grand public (jamais un domaine d'entreprise). */
+
+export const PUBLIC_MAIL_DOMAINS = new Set([
+  "gmail.com",
+  "googlemail.com",
+  "outlook.com",
+  "outlook.fr",
+  "hotmail.com",
+  "hotmail.fr",
+  "live.com",
+  "live.fr",
+  "msn.com",
+  "yahoo.com",
+  "yahoo.fr",
+  "icloud.com",
+  "me.com",
+  "free.fr",
+  "orange.fr",
+  "wanadoo.fr",
+  "sfr.fr",
+  "laposte.net",
+  "bluewin.ch",
+  "protonmail.com",
+  "proton.me",
+  "gmx.net",
+  "gmx.ch",
+]);

@@ -1,0 +1,141 @@
+# Projet compose « imiel » (conteneurs imiel-*, volumes imiel_*) : nom du
+# produit depuis 2026-11-24 ; le passage du serveur est fait par
+# deploy/renommer-serveur-imiel.sh au premier deploiement.
+name: imiel
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        POCKETBASE_INTERNAL_URL: http://pocketbase:8090
+        WORKER_INTERNAL_URL: http://mail-worker:4001
+        NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
+        NEXT_PUBLIC_POCKETBASE_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    ports:
+      - "3000:3000"
+    environment:
+      # Runtime server-side vars (API routes Next.js)
+      - MAIL_WORKER_URL=http://mail-worker:4001
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL}
+    depends_on:
+      pocketbase:
+        condition: service_healthy
+    restart: unless-stopped
+
+  pocketbase:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.pocketbase
+    ports:
+      - "8090:8090"
+    environment:
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - MAIL_WORKER_URL=http://mail-worker:4001
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL}
+    volumes:
+      - pb_data:/pb/pb_data
+    restart: unless-stopped
+
+  mail-worker:
+    build:
+      context: ./backend/mail-worker
+      dockerfile: Dockerfile
+    ports:
+      - "4001:4001"
+    environment:
+      - POCKETBASE_URL=http://pocketbase:8090
+      - PB_ADMIN_EMAIL=${PB_ADMIN_EMAIL}
+      - PB_ADMIN_PASSWORD=${PB_ADMIN_PASSWORD}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - RSPAMD_URL=${RSPAMD_URL:-http://rspamd:11334}
+      - RSPAMD_HARD_SPAM_SCORE=${RSPAMD_HARD_SPAM_SCORE}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL}
+      - LLM_CLASSIFIER_ENABLED=${LLM_CLASSIFIER_ENABLED}
+      # Modele des travaux d'arriere-plan (tri, niveau, suivi, recap...) ; vide =
+      # defaut du code (ai-models.ts). OPENROUTER_MODEL reste celui du chat.
+      - OPENROUTER_MODEL_BACKGROUND=${OPENROUTER_MODEL_BACKGROUND:-}
+      # Notifications de l'application iPhone (APNs, cle d'equipe .p8).
+      - APNS_KEY_ID=${APNS_KEY_ID:-}
+      - APNS_TEAM_ID=${APNS_TEAM_ID:-}
+      - APNS_KEY_P8_BASE64=${APNS_KEY_P8_BASE64:-}
+      - APNS_BUNDLE_ID=${APNS_BUNDLE_ID:-studio.haiko.imiel}
+      - APNS_PRODUCTION=${APNS_PRODUCTION:-true}
+      # Path SQLite direct (lecture+ecriture FTS5 par le worker). Le volume
+      # pb_data est partage avec PB ; SQLite WAL supporte multi-writer sans
+      # corruption tant que tous les processes utilisent journal_mode=WAL.
+      - PB_DATA_PATH=/pb/pb_data
+      # Cache binaire des vecteurs sur un volume PERSISTANT : dans /tmp du
+      # conteneur, chaque recreate le vidait -> reconstruction ~12s au boot.
+      - EMBEDDINGS_CACHE_PATH=/vec-cache/imiel-vectors.db
+    volumes:
+      - pb_data:/pb/pb_data
+      - vec_cache:/vec-cache
+    depends_on:
+      pocketbase:
+        condition: service_healthy
+    restart: unless-stopped
+
+  rspamd:
+    image: rspamd/rspamd:latest
+    profiles: ["spam"]
+    volumes:
+      - ./backend/rspamd/local.d:/etc/rspamd/local.d:ro
+      - ./backend/rspamd/override.d:/etc/rspamd/override.d:ro
+      - rspamd_data:/var/lib/rspamd
+    restart: unless-stopped
+    networks:
+      - default
+      - dev-infra
+    healthcheck:
+      test: ["CMD", "rspamc", "stat"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  libretranslate:
+    image: libretranslate/libretranslate:latest
+    profiles: ["translate"]
+    volumes:
+      - lt_data:/home/libretranslate/.local
+    environment:
+      - LT_LOAD_ONLY=fr,en,de,it
+    restart: unless-stopped
+    labels:
+      - "autoheal=true"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/languages')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  autoheal:
+    image: willfarrell/autoheal:latest
+    profiles: ["ops"]
+    restart: unless-stopped
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=autoheal
+      - AUTOHEAL_INTERVAL=60
+      - AUTOHEAL_START_PERIOD=180
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  pb_data:
+  rspamd_data:
+  lt_data:
+  vec_cache:
+
+networks:
+  dev-infra:
+    external: true
+    name: dev-infra

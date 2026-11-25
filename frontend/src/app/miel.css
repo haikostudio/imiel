@@ -1,0 +1,907 @@
+/* ==========================================================================
+   Apparence MIEL (defaut) — maquette validee 2026-11 (carte 1b8db9).
+   ------------------------------------------------------------------------
+   Tout est porte par <html data-design="miel" data-design-bg="..."> pose par
+   le script de demarrage (app/layout.tsx) puis par applyDesign()
+   (lib/hooks/useSettings.ts). data-design="minimal" = apparence noir et blanc
+   d'origine : AUCUNE regle de ce fichier ne s'y applique.
+
+   Methode (competence theme-sombre-ajoute-par-jetons-tailwind) :
+   1. les JETONS de la charte (--background, --muted...) sont redefinis sous
+      [data-design=miel] et [data-design=miel].dark ;
+   2. les quelques surfaces propres a Miel (cadre, blocs flottants, bulles,
+      pilules miel) sont posees ici par data-ref, avec des jetons --miel-* ;
+      jamais de couleur en dur dans les composants.
+   Les deplacements de structure (barre du haut pleine largeur, titre et
+   barre d'etat dans le bloc de la liste, etiquettes retirees du menu) sont
+   faits en RENDU REACT conditionnel (useIsMiel), jamais en deplacant le DOM :
+   un deplacement remet les defilements a zero.
+
+   Regles de la maquette : aucune ligne de separation (SEULE exception : le
+   fin trait --miel-group-rule sous l'entete d'un groupe ou d'une fenetre,
+   choix utilisateur carte e339f1), aucun bloc colle aux bords, jamais de bordure gauche coloree sur une forme arrondie (le trait
+   d'importance est une courte ligne verticale aux bouts arrondis, DETACHEE
+   du bord du bloc par une petite marge — choix utilisateur carte adb035 ; la
+   pastille de selection commence juste a sa droite, sans le recouvrir).
+   ========================================================================== */
+
+:root[data-design="miel"] {
+  --background: #fffdf8;
+  --foreground: #1c1a17;
+  --card: #ffffff;
+  --card-foreground: #1c1a17;
+  --popover: #ffffff;
+  --popover-foreground: #1c1a17;
+  --primary: #151412;
+  --primary-foreground: #ffffff;
+  --secondary: #f6f1e8;
+  --secondary-foreground: #2a241c;
+  --muted: #f6f1e8;
+  --muted-foreground: #7e7366;
+  --accent: #fbf1dc;
+  --accent-foreground: #2a241c;
+  --border: transparent;
+  --input: rgba(140, 100, 30, 0.14);
+  --ring: #f2b127;
+  --sidebar: transparent;
+  --sidebar-foreground: #1c1a17;
+  --sidebar-accent: rgba(255, 255, 255, 0.6);
+  --sidebar-accent-foreground: #1c1a17;
+  --sidebar-border: transparent;
+  --unread: #1c1a17;
+
+  /* Jetons propres a Miel */
+  --miel-page: linear-gradient(135deg, #fdfaf4 0%, #f9f0df 100%);
+  --miel-app-bg: url("/backgrounds/vagues-clair.svg");
+  /* Telephone (piste B, carte adb035) : voile miel pose PAR-DESSUS le fond
+     illustre, plus dore des le haut, pour que les blocs blancs s'en detachent. */
+  --miel-mobile-veil: linear-gradient(180deg, rgba(247, 233, 203, 0.62) 0%, rgba(242, 220, 168, 0.55) 50%, rgba(236, 203, 132, 0.6) 100%),
+    radial-gradient(120% 60% at 100% 100%, rgba(248, 201, 100, 0.45) 0%, rgba(248, 201, 100, 0) 70%);
+  --miel-honey: #f6b21c;
+  --miel-honey-grad: linear-gradient(180deg, #ffd247 0%, #f6b21c 100%);
+  --miel-honey-ink: #231a06;
+  --miel-honey-shadow: 0 12px 24px -10px rgba(240, 165, 20, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  --miel-honey-soft: #fdedbe;
+  --miel-active-grad: linear-gradient(180deg, #fff0c6, #fde6a8);
+  --miel-active-shadow: 0 6px 14px -8px rgba(230, 160, 20, 0.55);
+  --miel-active-ink: #1c1a17;
+  --miel-chip: #ffffff;
+  --miel-chip-shadow: 0 1px 2px rgba(90, 60, 10, 0.05), 0 6px 14px -8px rgba(120, 80, 10, 0.25);
+  --miel-field-shadow: 0 1px 2px rgba(90, 60, 10, 0.05), 0 8px 22px -10px rgba(120, 80, 10, 0.22);
+  --miel-dark-btn: #151412;
+  --miel-dark-btn-ink: #ffffff;
+  --miel-frame-shadow: 0 50px 100px -40px rgba(165, 115, 30, 0.45), 0 12px 30px -18px rgba(165, 115, 30, 0.25),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.95);
+  --miel-surface-list: rgba(255, 255, 255, 0.88);
+  --miel-surface-read: rgba(255, 255, 255, 0.4);
+  --miel-outline: rgba(255, 255, 255, 0.95);
+  --miel-outline-soft: rgba(255, 255, 255, 0.75);
+  --miel-shadow-list: 0 1px 2px rgba(90, 60, 10, 0.04), 0 22px 50px -26px rgba(150, 100, 20, 0.4);
+  --miel-shadow-read: 0 22px 50px -30px rgba(150, 100, 20, 0.3);
+  --miel-bubble: #ffffff;
+  --miel-bubble-shadow: 0 1px 2px rgba(60, 40, 10, 0.05), 0 14px 34px -14px rgba(60, 40, 10, 0.18);
+  --miel-pill: rgba(255, 255, 255, 0.85);
+  --miel-reply-fade: rgba(253, 246, 232, 0.97);
+  --miel-reply-fade-0: rgba(253, 246, 232, 0);
+  --miel-avatar-shadow: 0 2px 6px -1px rgba(60, 40, 10, 0.18);
+  --miel-grid-line: rgba(150, 110, 40, 0.1);
+  /* Pages a groupes (choix utilisateur carte e339f1, version C) : le grand
+     bloc est un VOILE clair qui laisse voir le fond dore, les groupes poses
+     dessus sont BLANCS, un fin trait separe leur entete. Jamais de creme
+     terne (« brun clair » refuse). */
+  --miel-surface-veil: rgba(255, 255, 255, 0.42);
+  --miel-veil-outline: rgba(255, 255, 255, 0.7);
+  --miel-surface-group: #ffffff;
+  --miel-group-shadow: 0 1px 2px rgba(90, 60, 10, 0.05), 0 10px 24px -16px rgba(120, 80, 10, 0.3);
+  --miel-group-rule: rgba(140, 100, 30, 0.13);
+  --miel-mine-ring: #f6c64a;
+  --miel-today-cell: #fdf1cf;
+}
+
+/* Fonds au choix (clair) */
+:root[data-design="miel"][data-design-bg="alveoles"] { --miel-app-bg: url("/backgrounds/alveoles-clair.svg"); }
+:root[data-design="miel"][data-design-bg="matin"] { --miel-app-bg: url("/backgrounds/matin-clair.svg"); }
+:root[data-design="miel"][data-design-bg="uni"] { --miel-app-bg: url("/backgrounds/uni-clair.svg"); }
+
+/* Miel sombre : version sombre CHAUDE (brun, halos ambres). */
+:root[data-design="miel"].dark {
+  --background: #1e1913;
+  --foreground: #f4ecdf;
+  --card: #29221b;
+  --card-foreground: #f4ecdf;
+  --popover: #2b241c;
+  --popover-foreground: #f4ecdf;
+  --primary: #f4ecdf;
+  --primary-foreground: #1e1913;
+  --secondary: #30281f;
+  --secondary-foreground: #f4ecdf;
+  --muted: #30281f;
+  --muted-foreground: #a99a86;
+  --accent: #372d22;
+  --accent-foreground: #f4ecdf;
+  --border: transparent;
+  --input: rgba(255, 225, 170, 0.1);
+  --ring: #f2b127;
+  --sidebar: transparent;
+  --sidebar-foreground: #f4ecdf;
+  --sidebar-accent: rgba(255, 225, 170, 0.08);
+  --sidebar-accent-foreground: #f4ecdf;
+  --sidebar-border: transparent;
+  --unread: #f4ecdf;
+
+  --miel-page: linear-gradient(135deg, #1a150f 0%, #120e0a 100%);
+  --miel-app-bg: url("/backgrounds/vagues-sombre.svg");
+  /* Sombre : pas de voile (les cartes brunes se detachent deja). */
+  --miel-mobile-veil: linear-gradient(transparent, transparent);
+  --miel-honey-grad: linear-gradient(180deg, #ffcf4a 0%, #f5a915 100%);
+  --miel-honey-ink: #2b1c02;
+  --miel-honey-shadow: 0 8px 20px -6px rgba(240, 160, 20, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  --miel-honey-soft: rgba(255, 196, 60, 0.14);
+  --miel-active-grad: linear-gradient(180deg, rgba(255, 200, 70, 0.2), rgba(255, 180, 40, 0.13));
+  --miel-active-shadow: none;
+  --miel-active-ink: #ffd873;
+  --miel-chip: #30281f;
+  --miel-chip-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px -4px rgba(0, 0, 0, 0.4);
+  --miel-field-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px -4px rgba(0, 0, 0, 0.4);
+  --miel-dark-btn: linear-gradient(180deg, #ffcf4a 0%, #f5a915 100%);
+  --miel-dark-btn-ink: #2b1c02;
+  --miel-frame-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(255, 220, 160, 0.07);
+  --miel-surface-list: rgba(41, 34, 27, 0.94);
+  --miel-surface-read: rgba(33, 27, 21, 0.55);
+  --miel-outline: rgba(255, 220, 160, 0.07);
+  --miel-outline-soft: rgba(255, 220, 160, 0.06);
+  --miel-shadow-list: 0 2px 4px rgba(0, 0, 0, 0.25), 0 18px 44px -14px rgba(0, 0, 0, 0.6);
+  --miel-shadow-read: 0 18px 44px -20px rgba(0, 0, 0, 0.55);
+  --miel-bubble: #29221b;
+  --miel-bubble-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 18px 44px -14px rgba(0, 0, 0, 0.6);
+  --miel-pill: #30281f;
+  --miel-reply-fade: rgba(31, 25, 19, 0.96);
+  --miel-reply-fade-0: rgba(31, 25, 19, 0);
+  --miel-avatar-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  --miel-grid-line: rgba(255, 225, 170, 0.07);
+  --miel-surface-veil: rgba(20, 16, 12, 0.45);
+  --miel-veil-outline: rgba(255, 220, 160, 0.07);
+  --miel-surface-group: #2b241d;
+  --miel-group-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 14px 30px -16px rgba(0, 0, 0, 0.55);
+  --miel-group-rule: rgba(255, 220, 160, 0.08);
+  --miel-mine-ring: rgba(246, 190, 60, 0.6);
+  --miel-today-cell: rgba(255, 196, 60, 0.1);
+}
+:root[data-design="miel"].dark[data-design-bg="alveoles"] { --miel-app-bg: url("/backgrounds/alveoles-sombre.svg"); }
+:root[data-design="miel"].dark[data-design-bg="matin"] { --miel-app-bg: url("/backgrounds/matin-sombre.svg"); }
+:root[data-design="miel"].dark[data-design-bg="uni"] { --miel-app-bg: url("/backgrounds/uni-sombre.svg"); }
+
+/* ------------------------------------------------------------ Communs */
+
+/* Aucune ligne de separation : filets de ligne, separateurs, poignees. */
+[data-design="miel"] [data-ref="app-root"] [data-slot="separator"] { display: none; }
+/* (::after seulement : le ::before des lignes porte la pastille de selection) */
+[data-design="miel"] .row-divider::after { display: none; }
+
+/* Boutons "contour" : sans bord, ils deviennent des pastilles ombrees. */
+[data-design="miel"] [data-slot="button"][data-variant="outline"] {
+  background: var(--miel-chip);
+  box-shadow: var(--miel-chip-shadow);
+}
+
+/* Lignes de la liste : fond transparent sur le bloc clair, selection en
+   pastille miel arrondie DANS la ligne, a droite du trait d'importance. */
+[data-design="miel"] [data-ref="app-root"] [role="button"].group\/row {
+  background: transparent;
+}
+[data-design="miel"] [data-ref="app-root"] [role="button"].group\/row.mail-row-selected::before {
+  content: "";
+  position: absolute;
+  inset: 2px 8px 2px 13px;
+  border-radius: 14px;
+  background: var(--miel-honey-soft);
+  z-index: -1;
+  pointer-events: none;
+}
+/* Newsletters (liste ordinateur) : pas de trait d'importance, la pastille
+   part a 8px du bord comme a droite. */
+[data-design="miel"] [data-ref="newsletters-list-panel"] [role="button"].group\/row.mail-row-selected::before { left: 8px; }
+/* Trait d'importance : ligne verticale arrondie, detachee du bord (5px) et
+   des lignes voisines (8px en haut et en bas). Il suit la ligne au balayage. */
+[data-design="miel"] [data-ref="mail-row-importance"] {
+  width: 3px;
+  top: 8px;
+  bottom: 8px;
+  left: 5px;
+  border-radius: 999px;
+}
+[data-design="miel"] [data-ref="message-row-avatar"] img {
+  border-color: transparent;
+  box-shadow: var(--miel-avatar-shadow);
+}
+
+/* Pastilles de filtres : blanches ombrees ; la pastille active reste en
+   --primary (noir en clair). */
+[data-design="miel"] [data-ref="filter-bar"] button[class*="border"],
+[data-design="miel"] [data-ref="filter-settings"] {
+  border-color: transparent;
+  background: var(--miel-chip);
+  box-shadow: var(--miel-chip-shadow);
+}
+[data-design="miel"] [data-ref="filter-bar"] .chip-row {
+  padding: 4px 2px 8px;
+}
+
+/* Lecture : bulle du mail blanche ombree, pastilles de date douces. */
+[data-design="miel"] [data-ref="thread-pane"] .bg-background { background: transparent; }
+[data-design="miel"] [data-ref="thread-header"] { background: transparent; }
+[data-design="miel"] [data-ref="thread-message-bubble"] {
+  background: var(--miel-bubble);
+  box-shadow: var(--miel-bubble-shadow);
+  border-radius: 18px;
+}
+[data-design="miel"] [data-ref="date-pill"] > * { background: var(--miel-pill); }
+[data-design="miel"] [data-ref="date-pill"] > span[aria-hidden] { display: none; }
+
+/* Zone de reponse : pilule blanche ombree, fondu au-dessus (le texte du mail
+   ne passe jamais sous ni derriere la pilule). */
+[data-design="miel"] [data-ref="thread-pane"] .kb-sticky-bottom {
+  border: 0;
+  padding-top: 26px;
+  background: linear-gradient(to top, var(--miel-reply-fade) 62%, var(--miel-reply-fade-0));
+}
+[data-design="miel"] [data-ref="thread-reply"] { background: transparent; }
+[data-design="miel"] [data-ref="thread-pane"] [data-ref="thread-reply-open"],
+[data-design="miel"] [data-ref="thread-reply-open"] {
+  background: var(--miel-bubble);
+  border: 0;
+  box-shadow: var(--miel-bubble-shadow);
+  height: 50px;
+  padding: 0 22px;
+  font-size: 15px;
+}
+
+/* Bouton "Nouveau message" du menu et rond "Rediger" de la barre du pied
+   (le bouton de la barre porte compose-fab ; seul son rond est miel). */
+[data-design="miel"] [data-ref="sidebar-compose-btn"],
+[data-design="miel"] [data-ref="header-mobile-compose"],
+[data-design="miel"] [data-ref="compose-fab-disc"] {
+  background: var(--miel-honey-grad);
+  color: var(--miel-honey-ink);
+  box-shadow: var(--miel-honey-shadow);
+  border: 0;
+  font-weight: 600;
+}
+[data-design="miel"] [data-ref="sidebar-compose-btn"] svg,
+[data-design="miel"] [data-ref="header-mobile-compose"] svg,
+[data-design="miel"] [data-ref="compose-fab-disc"] svg { color: var(--miel-honey-ink); }
+
+/* Champs de recherche : blancs ombres. */
+[data-design="miel"] [data-ref="header-search"],
+[data-design="miel"] [data-ref="header-search-mobile"],
+[data-design="miel"] [data-ref="mail-search"] {
+  background: var(--miel-chip);
+  box-shadow: var(--miel-field-shadow);
+}
+
+/* Agenda : traits de grille tres doux, ton chaud. */
+[data-design="miel"] .calendar-pager .border-b,
+[data-design="miel"] .calendar-pager [class*="border-r"],
+[data-design="miel"] .calendar-pager [class*="border-l"],
+[data-design="miel"] .calendar-pager [class*="border-t"] {
+  border-color: var(--miel-grid-line);
+}
+[data-design="miel"] [data-slot="tabs-list"] { background: var(--muted); }
+
+/* ------------------------------------------------------------ Ordinateur */
+@media (min-width: 768px) {
+  [data-design="miel"] body { background: var(--miel-page); }
+  /* Marge autour de la fenetre divisee par deux (choix utilisateur e339f1) ;
+     le bandeau d'installation est un bloc a part, separe par un ecart. */
+  [data-design="miel"] [data-ref="app-root"] {
+    background: var(--miel-page);
+    padding: 11px 13px;
+    gap: 10px;
+  }
+
+  /* Grande fenetre arrondie : fond illustre, barre du haut + panneaux. */
+  [data-design="miel"] [data-ref="miel-frame"] {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    border-radius: 30px;
+    background: var(--miel-app-bg) center / cover no-repeat;
+    box-shadow: var(--miel-frame-shadow);
+    padding: 8px 16px 16px;
+    overflow: hidden;
+  }
+
+  /* Les panneaux redimensionnables posent overflow:hidden en style inline :
+     les ombres des blocs ont besoin de deborder. */
+  [data-design="miel"] [data-ref="miel-frame"] [data-slot="resizable-panel-group"],
+  [data-design="miel"] [data-ref="miel-frame"] [data-slot="resizable-panel"],
+  [data-design="miel"] [data-ref="sidebar-panel"] > div,
+  [data-design="miel"] [data-ref="main-panel"] > div {
+    overflow: visible !important;
+  }
+  [data-design="miel"] [data-ref="miel-frame"] [data-slot="resizable-handle"] {
+    width: 0;
+    background: transparent;
+  }
+  [data-design="miel"] [data-ref="miel-frame"] [data-slot="resizable-handle"] > div { display: none; }
+
+  /* Barre du haut pleine largeur : logo, recherche centree, actions. */
+  [data-design="miel"] [data-ref="miel-frame"] > [data-ref="header"] {
+    background: transparent;
+    height: 64px;
+    padding: 0 4px;
+    gap: 10px;
+    border: 0;
+  }
+  [data-design="miel"] [data-ref="header-logo"] {
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    box-shadow: 0 6px 14px -6px rgba(220, 150, 10, 0.6);
+    flex: none;
+  }
+  [data-design="miel"] [data-ref="miel-frame"] [data-ref="header-search-slot"] {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(480px, 40vw);
+    flex: none;
+  }
+  [data-design="miel"] [data-ref="miel-frame"] [data-ref="header-search"] {
+    height: 44px;
+    max-width: none;
+    font-size: 15px;
+  }
+  [data-design="miel"] [data-ref="miel-frame"] [data-ref="header-activity-bell"],
+  [data-design="miel"] [data-ref="miel-frame"] [data-ref="header-ai-chat"] {
+    width: 44px;
+    height: 44px;
+  }
+  [data-design="miel"] [data-ref="header-compose"] {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: var(--miel-dark-btn);
+    color: var(--miel-dark-btn-ink);
+    box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Menu : pose sur le fond, sans fond ni bord. */
+  [data-design="miel"] [data-ref="sidebar-panel"] { padding: 6px 18px 0 0; }
+  [data-design="miel"] [data-ref="sidebar"] { background: transparent; border-color: transparent; }
+  [data-design="miel"] [data-ref="sidebar-header"] { padding: 2px 0 4px; }
+  [data-design="miel"] [data-ref="sidebar-compose-wrap"] { padding: 8px 0 10px; }
+  [data-design="miel"] [data-ref="sidebar-nav"] { padding: 0; gap: 3px; }
+  [data-design="miel"] [data-ref="sidebar-footer"] { padding: 8px 0 4px; }
+  [data-design="miel"] [data-ref="sidebar-account-switcher"] {
+    background: var(--miel-chip);
+    border-radius: 999px;
+    box-shadow: var(--miel-field-shadow);
+    border: 0;
+    height: 46px;
+    padding: 0 18px;
+    font-weight: 600;
+  }
+  [data-design="miel"] [data-ref="sidebar-compose-btn"] {
+    border-radius: 999px;
+    font-size: 15px;
+    height: 46px;
+  }
+  [data-design="miel"] [data-ref="sidebar-nav"] a {
+    border-radius: 14px;
+    font-weight: 500;
+    border: 0;
+    height: 38px;
+  }
+  [data-design="miel"] [data-ref="sidebar-nav"] [data-active] {
+    background: var(--miel-active-grad);
+    box-shadow: var(--miel-active-shadow);
+    color: var(--miel-active-ink);
+    border: 0;
+  }
+  [data-design="miel"] [data-ref="sidebar-nav"] > a:first-child { margin-bottom: 6px; }
+  [data-design="miel"] [data-ref="sidebar-nav-calendar"] { margin-top: 10px; }
+  [data-design="miel"] [data-ref="sidebar-footer"] button { font-weight: 500; }
+
+  /* Zone principale. */
+  [data-design="miel"] [data-ref="main-panel"],
+  [data-design="miel"] [data-ref="app-main-desktop"] { background: transparent; }
+
+  /* Pages de contenu (agenda, contacts, suivi...) : le contenu dans un bloc
+     clair. La zone garde SON defilement (overflow-y auto, hauteur bornee par
+     le flex) : un parent en overflow visible casse le defilement interne de
+     l'agenda (il s'ouvrait sur juillet). */
+  [data-design="miel"] [data-ref="app-main-desktop"]:not(:has(> :is([data-ref="mail-folder-page"], [data-ref="two-block-page"]))) {
+    background: var(--miel-surface-list);
+    border-radius: 22px;
+    box-shadow: var(--miel-shadow-list);
+    outline: 1px solid var(--miel-outline);
+    outline-offset: -1px;
+    margin: 4px 6px 6px 2px;
+  }
+
+  /* Page des mails, et pages liste + fiche (Suivi, Contacts : two-block-page) :
+     deux blocs flottants detaches, sans grand bloc autour. */
+  [data-design="miel"] :is([data-ref="mail-folder-page"], [data-ref="two-block-page"]) { gap: 14px; padding: 6px 4px 4px 2px; }
+  [data-design="miel"] [data-ref="two-block-page"] [data-ref="two-block-list"],
+  [data-design="miel"] [data-ref="mail-folder-page"] [data-ref="mail-list-block"] {
+    background: var(--miel-surface-list);
+    border-radius: 22px;
+    box-shadow: var(--miel-shadow-list);
+    outline: 1px solid var(--miel-outline);
+    outline-offset: -1px;
+    backdrop-filter: blur(18px);
+  }
+  /* Marge gauche resserree (carte « Pages au meme gabarit ») : l'avatar est a
+     8px du trait d'importance (5px + 3px) ; recherche, pastilles et avatars
+     alignes a 16px ; la pastille de selection commence 3px apres le trait. */
+  [data-design="miel"] [data-ref="mail-list-block"] [data-ref="filter-bar"] { padding: 10px 18px 10px 16px; }
+  [data-design="miel"] [data-ref="mail-list-block"] [role="button"].group\/row {
+    padding-left: 16px;
+    padding-right: 18px;
+  }
+  [data-design="miel"] [data-ref="mail-list-block"] [role="button"].group\/row.mail-row-selected::before { left: 11px; }
+  [data-design="miel"] [data-ref="mail-list-block"] [data-ref="filter-bar"] .chip-row {
+    -webkit-mask-image: linear-gradient(to right, #000 85%, transparent);
+    mask-image: linear-gradient(to right, #000 85%, transparent);
+  }
+  /* Lecture : conteneur leger et translucide, le fond passe au travers. */
+  [data-design="miel"] [data-ref="two-block-page"] [data-ref="two-block-read"],
+  [data-design="miel"] [data-ref="mail-folder-page"] [data-ref="thread-pane"] {
+    background: var(--miel-surface-read);
+    border-radius: 22px;
+    outline: 1px solid var(--miel-outline-soft);
+    outline-offset: -1px;
+    box-shadow: var(--miel-shadow-read);
+    backdrop-filter: blur(4px);
+    overflow: hidden;
+  }
+  [data-design="miel"] [data-ref="mail-folder-page"] [data-ref="thread-message-bubble"] { padding: 22px 24px; }
+  [data-design="miel"] [data-ref="mail-folder-page"] [data-ref="thread-reply"] { padding: 8px 18px 18px; }
+}
+
+/* ------------------------------------------------------------ Telephone */
+@media (max-width: 767px) {
+  [data-design="miel"] body { background: var(--background); }
+  [data-design="miel"] [data-ref="app-root"] {
+    background: var(--miel-mobile-veil), var(--miel-app-bg) right bottom / cover no-repeat, var(--background);
+  }
+  /* Vue d'ensemble : la page laisse voir le fond voile (ses groupes restent
+     blancs, ombre douce). */
+  [data-design="miel"] [data-ref="overview-page"] { background: transparent; }
+  [data-design="miel"] [data-ref="app-wrapper"],
+  [data-design="miel"] [data-ref="app-main"],
+  [data-design="miel"] [data-ref="mail-folder-page"],
+  [data-design="miel"] [data-ref="mail-list-block"] { background: transparent; }
+  [data-design="miel"] [data-ref="header"] { background: transparent; }
+  [data-design="miel"] [data-ref="header-title"] { font-size: 18px; font-weight: 700; }
+  [data-design="miel"] [data-ref="mail-search"] { height: 46px; }
+
+  /* Liste dans un bloc clair arrondi, detache des bords. */
+  /* Bloc arrondi aux QUATRE coins, arrete ~10px au-dessus de la barre du
+     pied (qui reserve deja sa hauteur en bas de la zone principale) : plus de
+     bas coupe net contre la barre. */
+  [data-design="miel"] [data-ref="mail-list-block"] [data-ref="mail-virtual-list"] {
+    margin: 4px 10px 10px;
+    background: var(--miel-surface-list);
+    border-radius: 24px;
+    box-shadow: 0 -1px 0 var(--miel-outline), 0 20px 50px -20px rgba(150, 100, 20, 0.35);
+    overflow: hidden;
+  }
+
+  /* Lecture plein ecran : le fond reste visible derriere la carte du mail. */
+  [data-design="miel"] [data-slot="drawer-content"]:has([data-ref="thread-pane"]) {
+    background: var(--miel-mobile-veil), var(--miel-app-bg) right bottom / cover no-repeat, var(--background);
+    border: 0;
+  }
+  [data-design="miel"] [data-slot="drawer-content"] [data-ref="thread-pane"] { background: transparent; }
+  [data-design="miel"] [data-slot="drawer-content"] [data-ref="thread-header"] {
+    background: color-mix(in oklab, var(--background) 60%, transparent);
+    backdrop-filter: blur(16px);
+  }
+  [data-design="miel"] [data-ref="thread-message-bubble"] { padding: 16px 18px; }
+  [data-design="miel"] [data-ref="thread-pane"] [data-ref="thread-reply-open"],
+[data-design="miel"] [data-ref="thread-reply-open"] { height: 48px; }
+
+  /* Pages de contenu (Suivi, Contacts, Newsletters, Statistiques) : le fond
+     illustre se voit, le contenu est dans un bloc clair detache des bords,
+     comme la liste des mails. */
+  [data-design="miel"] [data-ref="tracking-list-panel"],
+  [data-design="miel"] [data-ref="contacts-list-panel"],
+  [data-design="miel"] [data-ref="newsletters-page"],
+  [data-design="miel"] [data-ref="newsletter-stats-page"],
+  [data-design="miel"] [data-ref="contacts-search"] {
+    background: transparent;
+    border-color: transparent;
+  }
+  [data-design="miel"] [data-ref="tracking-list-scroll"],
+  [data-design="miel"] [data-ref="newsletters-scroll"],
+  [data-design="miel"] [data-ref="contacts-list-panel"] [data-ref="contact-list"] {
+    margin: 4px 10px 10px;
+    background: var(--miel-surface-list);
+    border-radius: 24px;
+    box-shadow: 0 -1px 0 var(--miel-outline), 0 20px 50px -20px rgba(150, 100, 20, 0.35);
+    overflow: hidden;
+  }
+  /* Contacts : la liste est en h-full dans son cadre ; sa marge haute + basse
+     (14px) est retiree de sa hauteur pour que le bas arrondi reste visible. */
+  [data-design="miel"] [data-ref="contacts-list-panel"] [data-ref="contact-list"] {
+    height: calc(100% - 14px);
+  }
+  /* Contacts : la lettre se pose DANS le bloc (plus de bande grise). */
+  [data-design="miel"] [data-ref="contact-letter"] {
+    background: color-mix(in oklab, var(--miel-surface-group) 92%, transparent);
+    padding-left: 18px;
+  }
+  [data-design="miel"] [data-ref="contacts-search"] {
+    margin: 0 10px 8px;
+    border-radius: 999px;
+    background: var(--miel-chip);
+    box-shadow: var(--miel-field-shadow);
+    padding-left: 14px;
+  }
+  /* Statistiques : cartes blanches posees sur le fond. */
+  [data-design="miel"] [data-ref="newsletter-stats-page"] .bg-card {
+    background: var(--miel-surface-group);
+    border-color: transparent;
+    box-shadow: var(--miel-group-shadow);
+  }
+  /* Agenda : meme presentation, un peu d'air autour de la grille. */
+  [data-design="miel"] [data-ref="calendar-page"] { padding: 2px 12px 0; }
+
+  /* Barre du pied : verre clair chaud, sans filet ; bouton actif en miel. */
+  [data-design="miel"] [data-ref="mobile-footer-bar"] {
+    background: color-mix(in oklab, var(--background) 82%, transparent);
+    border-color: transparent;
+    box-shadow: 0 -10px 30px -18px rgba(150, 100, 20, 0.35);
+  }
+  [data-design="miel"] [data-ref="mobile-footer-bar"] .mobile-footer-item[data-active] {
+    background: var(--miel-active-grad);
+    color: var(--miel-active-ink);
+  }
+}
+
+/* Menu replie deploye au survol : il passe au-dessus du contenu, il lui faut
+   un fond (le menu Miel est transparent). */
+@media (min-width: 768px) {
+  [data-design="miel"] [data-ref="sidebar-hover-zone"] [data-ref="sidebar"].absolute {
+    background: var(--popover);
+    border-radius: 22px;
+    box-shadow: var(--miel-shadow-list);
+    padding: 0 10px;
+  }
+}
+
+/* Reglages > Apparence : vignettes des fonds (DesignPicker). */
+[data-design="miel"] .miel-tile {
+  box-shadow: 0 1px 2px rgba(90, 60, 10, 0.08), 0 4px 14px -6px rgba(120, 80, 10, 0.18);
+}
+[data-design="miel"] .miel-tile-active {
+  box-shadow: 0 0 0 2px var(--miel-honey), 0 8px 20px -8px rgba(200, 130, 10, 0.45);
+}
+[data-design="miel"] .miel-tile-check {
+  background: var(--miel-honey);
+  color: var(--miel-honey-ink);
+}
+
+/* Agenda : pastille du jour en miel (`calendar-today`, repere sans style). */
+[data-design="miel"] .calendar-today {
+  background: var(--miel-honey-grad);
+  color: var(--miel-honey-ink);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------- Ordinateur : finitions
+   (carte « Finitions Miel sur mobile », e339f1) */
+@media (min-width: 768px) {
+  /* Bandeau « iMiel sur votre bureau » (et alerte de compte) : bloc arrondi
+     detache de la grande fenetre, plus de filet. */
+  [data-design="miel"] [data-ref="desktop-download-banner"],
+  [data-design="miel"] [data-ref="account-error-banner"] {
+    flex: none;
+    border: 0;
+    border-radius: 16px;
+    background: var(--miel-surface-list);
+    box-shadow: var(--miel-field-shadow);
+    padding-left: 18px;
+  }
+
+  /* Vrai ecart entre le menu et le contenu (menu deplie et replie). */
+  /* Le menu ne deborde plus de son panneau (avant : il prenait la largeur de
+     son contenu et ses compteurs passaient SOUS le bloc) ; l'ecart est pose
+     cote contenu. */
+  [data-design="miel"] [data-ref="sidebar-panel"] { padding-right: 0; }
+  [data-design="miel"] [data-ref="sidebar-panel"] [data-ref="sidebar"] { width: 100%; min-width: 0; }
+  [data-design="miel"] [data-ref="main-panel"] > div { padding-left: 14px; }
+  [data-design="miel"] [data-ref="sidebar-hover-zone"] { margin-right: 14px; }
+
+  /* Pages a GROUPES (data-veil) : le grand bloc devient un voile clair qui
+     laisse voir le fond dore ; les groupes poses dessus sont blancs. */
+  [data-design="miel"] [data-ref="app-main-desktop"]:has([data-veil]) {
+    background: var(--miel-surface-veil);
+    outline-color: var(--miel-veil-outline);
+  }
+  [data-design="miel"] [data-veil] { background: transparent; }
+  /* Boutons du pied d'une fiche : poses sur le voile, sans bande opaque. */
+  [data-design="miel"] :is([data-veil], [data-ref="two-block-read"]) [data-slot="bottom-action-bar"] { background: transparent; }
+  /* Suivi et Contacts (two-block-page, gabarit des mails) : la liste EST le
+     bloc clair, la fiche est posee dans le bloc de lecture translucide. */
+  [data-design="miel"] [data-ref="two-block-page"] :is([data-ref="two-block-list"], [data-ref="two-block-read"]) { border: 0; }
+  [data-design="miel"] [data-ref="two-block-list"] { overflow: hidden; }
+  [data-design="miel"] [data-ref="two-block-list"] :is([data-ref="tracking-list-panel"], [data-ref="contacts-list-panel"], [data-ref="newsletters-list-panel"]) {
+    background: transparent;
+  }
+  [data-design="miel"] [data-ref="two-block-list"] [data-ref="contact-letter"] {
+    background: color-mix(in oklab, var(--miel-surface-list) 92%, transparent);
+    padding-left: 18px;
+  }
+  /* Listes de Contacts et Suivi : bloc blanc a gauche, fiche sur le voile. */
+  [data-design="miel"] [data-veil] [data-ref="contacts-list-panel"],
+  [data-design="miel"] [data-veil] [data-ref="tracking-list-panel"] {
+    margin: 10px 4px 10px 10px;
+    height: calc(100% - 20px);
+    border-radius: 20px;
+    background: var(--miel-surface-group);
+    box-shadow: var(--miel-group-shadow);
+    overflow: hidden;
+  }
+  [data-design="miel"] [data-veil] [data-ref="contacts-list-panel"] [data-ref="contact-letter"] {
+    background: color-mix(in oklab, var(--miel-surface-group) 92%, transparent);
+  }
+  /* Entete d'une fiche de suivi : groupe blanc detache du bord du bloc. */
+  [data-design="miel"] :is([data-veil], [data-ref="two-block-read"]) :is(
+    [data-ref="tracking-mails-header"],
+    [data-ref="tracking-details-header"],
+    [data-ref="tracking-timeline-header"]
+  ) {
+    margin: 10px 12px 4px;
+    border-radius: 18px;
+    background: var(--miel-surface-group);
+    box-shadow: var(--miel-group-shadow);
+    padding: 8px 10px;
+  }
+  /* Statistiques : cartes blanches sur le voile. */
+  [data-design="miel"] [data-ref="newsletter-stats-page"] .bg-card {
+    background: var(--miel-surface-group);
+    box-shadow: var(--miel-group-shadow);
+  }
+  [data-design="miel"] [data-ref="newsletter-stats-page"] > header { background: transparent; border-color: var(--miel-group-rule); }
+
+  /* Lecture d'un mail : la ligne de l'expediteur ne touche plus la bulle. */
+  [data-design="miel"] [data-ref="thread-message-meta"] { margin-top: 8px; }
+  [data-design="miel"] [data-ref="thread-message-bubble"] { padding: 20px 22px; }
+}
+
+/* Groupes (partout en Miel) : blancs, ombre douce, et un fin trait sous leur
+   entete — seule ligne de separation de l'apparence. */
+[data-design="miel"] [data-ref="section-card"],
+[data-design="miel"] [data-ref="contact-stats"],
+[data-design="miel"] [data-ref="contact-memory"] {
+  background: var(--miel-surface-group);
+  border-color: transparent;
+  border-radius: 20px;
+  box-shadow: var(--miel-group-shadow);
+}
+[data-design="miel"] [data-ref="section-card-head"] {
+  border-bottom: 1px solid var(--miel-group-rule);
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+[data-design="miel"] [data-ref="contact-memory"] > :first-child {
+  margin: 0 -16px;
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--miel-group-rule);
+}
+
+/* Fenetre de redaction (ordinateur et tiroir du telephone) : fond legerement
+   miel, entete distinct (teinte + fin trait), cartes De / A / Objet / texte
+   BLANCHES par-dessus (choix utilisateur carte e339f1). */
+[data-design="miel"] [data-ref="compose-panel"],
+[data-design="miel"] [data-ref="compose-sheet"] {
+  --compose-shell: color-mix(in oklab, var(--miel-honey-soft) 30%, var(--background));
+  background: var(--compose-shell);
+}
+[data-design="miel"] [data-ref="compose-panel-titlebar"],
+[data-design="miel"] [data-ref="compose-sheet"] [data-drawer-header] {
+  background: color-mix(in oklab, var(--miel-honey-soft) 62%, var(--background));
+  border-bottom: 1px solid var(--miel-group-rule);
+}
+[data-design="miel"] [data-ref="compose-panel-titlebar"] { margin-bottom: 8px; }
+[data-design="miel"] [data-ref="compose-form-toolbar"] { background: var(--compose-shell); }
+[data-design="miel"] .compose-card {
+  background: var(--miel-surface-group);
+  border-color: transparent;
+  box-shadow: var(--miel-group-shadow);
+}
+/* Miel SOMBRE : la coque melangeait une couleur translucide (honey-soft a
+   alpha 0,14) -> fenetre a moitie transparente, la liste se lisait au travers ;
+   la bordure (--border transparent) et l'ombre ne se voyaient pas sur le brun.
+   Coque et entete OPAQUES, plus clairs que la page, liseré clair et ombre
+   profonde pour detacher la fenetre ; les cartes De/A/Objet (#2b241d) restent
+   plus sombres que la coque. Le clair ne change pas. */
+:root[data-design="miel"].dark [data-ref="compose-panel"],
+:root[data-design="miel"].dark [data-ref="compose-sheet"] {
+  --compose-shell: #3a3026;
+  box-shadow:
+    0 0 0 1px rgba(255, 220, 160, 0.2),
+    0 -10px 50px rgba(0, 0, 0, 0.7),
+    0 30px 80px rgba(0, 0, 0, 0.8);
+}
+:root[data-design="miel"].dark [data-ref="compose-panel-titlebar"],
+:root[data-design="miel"].dark [data-ref="compose-sheet"] [data-drawer-header] {
+  background: #4a3c2c;
+  border-bottom-color: rgba(255, 220, 160, 0.14);
+}
+
+/* Menu REPLIE (ordinateur) : une colonne de 50 px dont l'axe tombe sur celui
+   du logo de la barre du haut (16 px de marge de la fenetre + 4 px de la barre
+   + 21 px = moitie du logo), et des boutons CARRES de 44 px centres sur cet
+   axe (choix utilisateur carte e339f1). Le menu deploye au survol
+   (aside.absolute) garde sa mise en page. */
+@media (min-width: 768px) {
+  [data-design="miel"] [data-ref="sidebar-hover-zone"] { width: 50px; }
+  [data-design="miel"] [data-ref="sidebar-hover-zone"] > [data-ref="sidebar"]:not(.absolute) {
+    width: 100%;
+    border: 0;
+  }
+  [data-design="miel"] [data-ref="sidebar-hover-zone"] > [data-ref="sidebar"]:not(.absolute) :is(
+    [data-ref="sidebar-header"],
+    [data-ref="sidebar-compose-wrap"],
+    [data-ref="sidebar-nav"],
+    [data-ref="sidebar-footer"]
+  ) {
+    padding-left: 0;
+    padding-right: 0;
+    align-items: center;
+  }
+  [data-design="miel"] [data-ref="sidebar-hover-zone"] > [data-ref="sidebar"]:not(.absolute) :is(
+    [data-ref="sidebar-account-switcher"],
+    [data-ref="sidebar-compose-btn"],
+    [data-ref="sidebar-nav"] a,
+    [data-ref="sidebar-footer"] button
+  ) {
+    display: flex;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0;
+    justify-content: center;
+    align-items: center;
+    border-radius: 14px;
+  }
+  [data-design="miel"] [data-ref="sidebar-hover-zone"] > [data-ref="sidebar"]:not(.absolute) [data-ref="sidebar-nav"] {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* ------------------------------------------------- Ordinateur : plus de barre
+   du haut (carte « Finitions Miel : blocs, espace, lisibilite ») — logo en
+   tete du menu, cloche en pied de menu, assistant en rond flottant, recherche
+   dans la barre d'etat. */
+@media (min-width: 768px) {
+  [data-design="miel"] [data-ref="miel-frame"] { padding: 16px; }
+  [data-design="miel"] [data-ref="sidebar-logo-wrap"] { padding: 2px 0 14px 2px; }
+  [data-design="miel"] [data-ref="sidebar-logo"] {
+    display: block;
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    box-shadow: 0 6px 14px -6px rgba(220, 150, 10, 0.6);
+  }
+  [data-design="miel"] [data-ref="sidebar-hover-zone"] > [data-ref="sidebar"]:not(.absolute) [data-ref="sidebar-logo-wrap"] {
+    display: flex;
+    justify-content: center;
+    padding-left: 0;
+  }
+  [data-design="miel"] [data-ref="sidebar-hover-zone"] > [data-ref="sidebar"].absolute [data-ref="sidebar-logo-wrap"] {
+    padding-top: 12px;
+  }
+  /* Le pied du menu ne se fait jamais chevaucher : la liste des dossiers
+     defile au-dessus de lui quand la fenetre est basse. */
+  [data-design="miel"] [data-ref="sidebar-footer"] { flex: none; }
+
+  /* Assistant : rond opaque en bas a droite, au-dessus des blocs, sous les
+     tiroirs et fenetres (z-40 < z-50). */
+  [data-design="miel"] [data-ref="miel-ai-fab"] {
+    right: 30px;
+    bottom: 30px;
+    width: 56px;
+    height: 56px;
+    background: var(--miel-dark-btn);
+    color: var(--miel-dark-btn-ink);
+    box-shadow: 0 14px 28px -12px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.18);
+  }
+  /* La pilule « Repondre » ne passe pas sous le rond (il est dans le coin bas
+     droit de la fenetre, donc du volet de lecture). */
+  [data-design="miel"] [data-ref="mail-folder-page"] [data-ref="thread-reply"] { padding-right: 86px; }
+}
+
+/* Recherche en tete de page (carte « Pages au meme gabarit ») : la barre
+   d'etat a disparu en Miel ; chaque page porte en haut une pilule blanche de
+   48 px dont le texte d'aide nomme la page. Listes de mails et vue d'ensemble :
+   elle ouvre la recherche globale ; Suivi et Contacts : leur recherche locale. */
+@media (min-width: 768px) {
+  [data-design="miel"] :is([data-ref="mail-list-search"], [data-ref="page-search"], [data-ref="tracking-search"]) {
+    height: 48px;
+    padding: 0 18px;
+    background: var(--miel-chip);
+    box-shadow: var(--miel-field-shadow);
+  }
+  [data-design="miel"] :is([data-ref="mail-list-search"], [data-ref="page-search"]):hover { color: var(--foreground); }
+  [data-design="miel"] [data-ref="two-block-list"] [data-ref="contacts-search"] {
+    height: 48px;
+    margin: 16px 16px 8px;
+    padding: 0 8px 0 18px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--miel-chip);
+    box-shadow: var(--miel-field-shadow);
+  }
+}
+
+/* Mes messages (piste C) : bulle blanche, texte fonce, lisere miel. La bulle
+   ouvreuse (data-opener, bg-mine) garde sa teinte de texte. */
+[data-design="miel"] [data-ref="thread-message-bubble"][data-mine] {
+  color: var(--foreground);
+  box-shadow: inset 0 0 0 2px var(--miel-mine-ring), var(--miel-bubble-shadow);
+}
+[data-design="miel"] [data-ref="thread-message-bubble"][data-mine].bg-mine { color: var(--mine-foreground); }
+
+/* Lecture d'une conversation (ordinateur) : l'en-tete du fil prend la teinte
+   du volet et le texte s'efface dessous dans un fondu (au lieu de se lire en
+   transparence). Le fondu ne capte aucun clic ; le bandeau de suivi (dans le
+   flux, juste dessous) descend d'autant pour rester net au repos. */
+@media (min-width: 768px) {
+  [data-design="miel"] [data-ref="thread-pane"] [data-ref="thread-header"] {
+    background: var(--miel-reply-fade);
+    border-bottom-color: transparent;
+  }
+  [data-design="miel"] [data-ref="thread-pane"] [data-ref="thread-header"]::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    height: 28px;
+    background: linear-gradient(to bottom, var(--miel-reply-fade), var(--miel-reply-fade-0));
+    pointer-events: none;
+  }
+  [data-design="miel"] [data-ref="thread-pane"] [data-ref="thread-tracking-float"] { margin-top: 22px; }
+
+  /* Bandeau « N echeance(s) a rapprocher » : moins colle en haut du bloc,
+     moins d'espace dessous (le titre de la liste remonte vers lui). */
+  [data-design="miel"] [data-ref="mail-list-block"] [data-ref="suggestions-banner"] { margin-top: 12px; }
+  [data-design="miel"] [data-ref="mail-list-block"]:has([data-ref="suggestions-banner"]) [data-ref="mail-list-title"] {
+    padding-top: 8px;
+  }
+}
+
+/* Agenda : case du jour en jaune pale (la pastille du chiffre reste miel). */
+[data-design="miel"] [data-ref="calendar-page"] [data-today] { background: var(--miel-today-cell); }
+
+/* Agenda (ordinateur) : de l'air a gauche, a droite et en bas du bloc, pour
+   que rien ne soit coupe par ses bords arrondis. Padding sur la page elle-meme
+   (jamais d'overflow visible sur un parent : l'agenda s'ouvrirait sur juillet). */
+@media (min-width: 768px) {
+  [data-design="miel"] [data-ref="calendar-page"] { padding: 0 14px 14px; }
+}
+
+/* Vue d'ensemble du telephone : ses blocs prennent la teinte, l'arrondi et
+   l'ombre de la liste du Suivi (ordinateur inchange : groupes blancs sur voile). */
+@media (max-width: 767px) {
+  [data-design="miel"] [data-ref="overview-page"] :is(
+    [data-ref="intro-today"],
+    [data-ref="intro-latest"],
+    [data-ref="intro-tracking"],
+    [data-ref="intro-newsletters"]
+  ) {
+    background: var(--miel-surface-list);
+    border-color: transparent;
+    border-radius: 24px;
+    box-shadow: 0 -1px 0 var(--miel-outline), 0 20px 50px -20px rgba(150, 100, 20, 0.35);
+  }
+}

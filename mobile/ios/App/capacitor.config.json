@@ -1,0 +1,15 @@
+{
+  "appId": "studio.haiko.imiel",
+  "appName": "iMiel",
+  "webDir": "public",
+  "server": {
+    "url": "https://imiel.example.com",
+    "allowNavigation": ["imiel.example.com", "imiel.example.com"]
+  },
+  "appendUserAgent": "iMielApp/1",
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": true,
+    "backgroundColor": "#000000"
+  }
+}
