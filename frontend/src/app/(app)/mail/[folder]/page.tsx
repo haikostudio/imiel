@@ -111,10 +111,11 @@ function sortThreadsForDisplay(threads: Thread[], unreadFirst: boolean): Thread[
 }
 
 // Ligne de la liste de mails (charte des maquettes) : fond blanc, marge 10px
-// sur telephone (1rem ordinateur), filet en fondu `row-divider` (globals.css),
+// a droite sur telephone et 20px a gauche (air entre le trait d'importance et
+// l'avatar, carte « Menu du bas en bouton flottant ») ; 1rem sur ordinateur, filet en fondu `row-divider` (globals.css),
 // survol gris.
 const MAIL_ROW_CLASS =
-  "group/row relative flex w-full items-start gap-3 px-[10px] md:px-4 text-left transition-colors cursor-pointer hover:bg-accent/60 row-divider";
+  "group/row relative flex w-full items-start gap-3 pl-5 pr-[10px] md:px-4 text-left transition-colors cursor-pointer hover:bg-accent/60 row-divider";
 // Fonds d'etat d'une ligne, OPAQUES (la ligne glissable cache ses actions de
 // balayage sous son fond) : non lue = gris (choix utilisateur 2026-10-19, le
 // point seul ne suffisait pas), ouverte = gris plus soutenu pour ne pas se

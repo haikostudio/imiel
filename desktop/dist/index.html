@@ -3,19 +3,175 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>iMiel</title>
+    <title>Bienvenue dans iMiel</title>
+    <!-- Jetons de l'apparence Miel, generes depuis frontend/src/app/miel.css
+         (desktop/scripts/jetons-miel.mjs) : aucune couleur en dur ici. -->
+    <link rel="stylesheet" href="miel.css" />
     <style>
-      html, body { margin: 0; height: 100%; background: #000; color: #fff;
-        font-family: system-ui, sans-serif; display: grid; place-items: center; }
-      .spinner { width: 28px; height: 28px; border: 3px solid rgba(255,255,255,.25);
-        border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
-      @keyframes spin { to { transform: rotate(360deg); } }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; }
+      body {
+        background: var(--miel-page); color: var(--foreground);
+        font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        display: grid; place-items: center; padding: 28px 18px;
+      }
+      main { width: 100%; max-width: 500px; }
+      header { text-align: center; margin-bottom: 24px; }
+      header img { width: 64px; height: 64px; border-radius: 16px; box-shadow: var(--miel-avatar-shadow); }
+      h1 { font-size: 23px; margin: 14px 0 4px; letter-spacing: -0.01em; }
+      header p { margin: 0; color: var(--muted-foreground); }
+      .choix { display: grid; gap: 12px; }
+      label.option {
+        display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: start;
+        background: var(--card); border-radius: 18px; padding: 16px 18px; cursor: pointer;
+        box-shadow: var(--miel-chip-shadow); outline: 2px solid transparent; transition: outline-color .15s, background .15s;
+      }
+      label.option:has(input:checked) { outline-color: var(--miel-honey, var(--ring)); background: var(--accent); }
+      label.option input { margin: 3px 0 0; accent-color: var(--miel-honey); width: 18px; height: 18px; }
+      .titre { font-weight: 600; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .prix { font-weight: 500; color: var(--muted-foreground); }
+      .badge {
+        font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+        background: var(--miel-honey-grad); color: var(--miel-honey-ink);
+      }
+      .detail { color: var(--muted-foreground); font-size: 13.5px; margin-top: 3px; display: block; }
+      .lien {
+        display: block; margin: 16px auto 0; background: none; border: 0; padding: 4px; cursor: pointer;
+        font: inherit; font-size: 13.5px; color: var(--foreground); text-decoration: underline; text-underline-offset: 3px;
+      }
+      .serveur { display: none; margin-top: 8px; }
+      .serveur.ouvert { display: block; }
+      .serveur input {
+        width: 100%; border: 0; border-radius: 12px; padding: 10px 12px; font: inherit;
+        background: var(--card); color: var(--foreground); box-shadow: var(--miel-field-shadow);
+        outline: 1px solid var(--input);
+      }
+      .serveur small { display: block; margin-top: 6px; color: var(--muted-foreground); font-size: 12.5px; }
+      .case { display: flex; gap: 10px; align-items: center; font-size: 14px; cursor: pointer; margin-top: 16px; }
+      .case input { accent-color: var(--miel-honey); width: 16px; height: 16px; }
+      button.principal {
+        margin-top: 18px; width: 100%; border: 0; border-radius: 14px; padding: 14px; cursor: pointer;
+        font: 600 15px/1 inherit; font-family: inherit;
+        background: var(--miel-dark-btn); color: var(--miel-dark-btn-ink);
+      }
+      button.principal:disabled { opacity: .6; cursor: progress; }
+      .etat { min-height: 20px; margin-top: 12px; text-align: center; font-size: 13px; color: var(--muted-foreground); }
+      .etat.erreur { color: var(--destructive, var(--foreground)); font-weight: 600; }
+      .indispo { opacity: .55; pointer-events: none; }
+      footer { text-align: center; margin-top: 8px; font-size: 12.5px; color: var(--muted-foreground); }
     </style>
   </head>
   <body>
-    <!-- Placeholder embarque : la fenetre charge en realite imiel.example.com
-         (configure dans src-tauri/src/main.rs). Ce fichier sert uniquement de
-         frontendDist requis par le bundler Tauri. -->
-    <div class="spinner" aria-label="Chargement d'iMiel"></div>
+    <main>
+      <header>
+        <img src="logo.png" alt="" />
+        <h1>Bienvenue dans iMiel</h1>
+        <p>Comment voulez-vous utiliser iMiel ?</p>
+      </header>
+
+      <form id="f" class="choix">
+        <label class="option" id="opt-cloud">
+          <input type="radio" name="mode" value="cloud" checked />
+          <span>
+            <span class="titre">iMiel Cloud <span class="prix">· 5,99 CHF / mois</span> <span class="badge">14 jours offerts</span></span>
+            <span class="detail">
+              Rien à régler. Vos boîtes vous suivent sur l'ordinateur, l'iPhone et le web, toujours à jour.
+              Notre serveur transmet et ne garde aucun mail.
+            </span>
+          </span>
+        </label>
+
+        <label class="option" id="opt-local">
+          <input type="radio" name="mode" value="local" />
+          <span>
+            <span class="titre">Gratuit, sur cet ordinateur</span>
+            <span class="detail" id="detail-local">
+              La version libre. iMiel relève vos boîtes depuis cette machine seulement, et vous les réglez vous-même.
+            </span>
+          </span>
+        </label>
+
+        <button type="button" class="lien" id="lien-serveur" aria-expanded="false">J'ai déjà mon propre serveur iMiel</button>
+        <div class="serveur" id="bloc-serveur">
+          <input id="adresse" type="url" inputmode="url" autocomplete="url" placeholder="https://mail.votre-domaine.fr" />
+          <small>L'app s'ouvrira directement sur ce serveur.</small>
+        </div>
+
+        <label class="case"><input type="checkbox" id="session" /> Lancer iMiel à l'ouverture de session</label>
+
+        <button type="submit" class="principal" id="continuer">Commencer l'essai gratuit</button>
+        <div class="etat" id="etat" role="status" aria-live="polite"></div>
+      </form>
+      <footer id="pied">Sans carte bancaire</footer>
+    </main>
+
+    <script>
+      const invoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke;
+      const $ = (id) => document.getElementById(id);
+      let version = "";
+      let serveur = false;
+      const etat = (texte, erreur) => {
+        $("etat").textContent = texte;
+        $("etat").classList.toggle("erreur", !!erreur);
+      };
+      const mode = () => (serveur ? "serveur" : document.querySelector("input[name=mode]:checked").value);
+      const maj = () => {
+        const m = mode();
+        $("continuer").textContent =
+          m === "cloud" ? "Commencer l'essai gratuit" : m === "local" ? "Continuer avec la version gratuite" : "Se connecter au serveur";
+        $("pied").textContent = (m === "cloud" ? "Sans carte bancaire" : m === "local" ? "Logiciel libre" : "Votre serveur iMiel") + (version ? " · iMiel " + version : "");
+        $("bloc-serveur").classList.toggle("ouvert", serveur);
+        $("lien-serveur").setAttribute("aria-expanded", String(serveur));
+        $("lien-serveur").textContent = serveur ? "Utiliser iMiel Cloud ou la version gratuite" : "J'ai déjà mon propre serveur iMiel";
+        document.querySelectorAll("label.option").forEach((o) => o.classList.toggle("indispo", serveur || o.dataset.indispo === "1"));
+      };
+      document.querySelectorAll("input[name=mode]").forEach((r) => r.addEventListener("change", maj));
+      $("lien-serveur").addEventListener("click", () => {
+        serveur = !serveur;
+        maj();
+        if (serveur) $("adresse").focus();
+      });
+
+      (async () => {
+        maj();
+        if (!invoke) return;
+        try {
+          const e = await invoke("etat_accueil");
+          version = e.version;
+          $("session").checked = e.lancementSession;
+          if (!e.localDisponible) {
+            // Version « fenetre » : la pile locale n'est pas embarquee (ni
+            // Cloud ni version gratuite) : seul le serveur reste possible.
+            for (const id of ["opt-cloud", "opt-local"]) $(id).dataset.indispo = "1";
+            $("detail-local").textContent = "Indisponible dans cette version de l'app.";
+            serveur = true;
+          }
+          maj();
+        } catch (err) {
+          etat(String(err), true);
+        }
+      })();
+
+      $("f").addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        if (!invoke) return etat("Cet écran ne fonctionne que dans l'app iMiel.", true);
+        const m = mode();
+        $("continuer").disabled = true;
+        try {
+          if (m === "serveur") {
+            const adresse = $("adresse").value.trim();
+            if (!adresse) throw "Indiquez l'adresse de votre serveur iMiel.";
+            etat("Connexion à " + adresse + "…");
+            await invoke("choisir_serveur", { adresse });
+          } else {
+            etat("Préparation d'iMiel… La première fois, cela peut prendre une minute.");
+            await invoke("choisir_local", { lancementSession: $("session").checked, cloud: m === "cloud" });
+          }
+        } catch (err) {
+          etat(String(err), true);
+          $("continuer").disabled = false;
+        }
+      });
+    </script>
   </body>
 </html>

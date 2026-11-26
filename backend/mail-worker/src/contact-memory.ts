@@ -19,7 +19,7 @@ import { backgroundModel } from "./ai-models";
 import { getPbDb, isSqliteDirectAvailable } from "./sqlite-direct";
 import { ensureSearchIndexFresh, searchDocs } from "./search-index";
 import { ftsPhrase } from "./search-query";
-import { aiFetch } from "./ai-budget";
+import { aiFetch, serverOpenRouterKey } from "./ai-budget";
 import {
   createContactMemory,
   findContactMemories,
@@ -364,7 +364,7 @@ Regles :
 - Redige en francais.`;
 
 async function callMemoryAi(system: string, user: string): Promise<unknown | null> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = serverOpenRouterKey();
   if (!apiKey) return null;
   try {
     const res = await aiFetch("contact-memory", {

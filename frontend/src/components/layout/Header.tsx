@@ -1,5 +1,6 @@
 "use client";
 
+import { useIaDisponible } from "@/lib/ai-settings";
 import { ArrowLeft, Bot, Menu, PenSquare, Settings } from "lucide-react";
 import { HashLink, useHashRouter } from "@/lib/hash-router";
 import { useState } from "react";
@@ -49,6 +50,7 @@ const ROUTE_TITLE_KEYS: Record<string, string> = {
  */
 export function Header() {
   const t = useT();
+  const iaDispo = useIaDisponible();
   const { route } = useHashRouter();
   const openSearch = useMailStore((s) => s.openSearch);
   const openCompose = useMailStore((s) => s.openCompose);
@@ -156,7 +158,8 @@ export function Header() {
       {/* Centre de notifications / activite */}
       <ActivityBell />
 
-      {/* Assistant IA */}
+      {/* Assistant IA (masque dans la version pour tous tant qu'aucune cle) */}
+      {iaDispo && (
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -172,6 +175,7 @@ export function Header() {
         </TooltipTrigger>
         <TooltipContent>{t("aiChat.open")}</TooltipContent>
       </Tooltip>
+      )}
 
       {/* Ecrire : bouton noir carre-arrondi (ordinateur ; sur telephone c'est
           la pilule flottante du bas) */}

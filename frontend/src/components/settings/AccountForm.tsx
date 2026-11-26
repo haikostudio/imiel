@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { getCurrentUserId } from "@/lib/pocketbase";
 import { getOAuthRedirectOrigin } from "@/lib/oauth-origin";
+import { EDITION_POUR_TOUS } from "@/lib/ai-settings";
 import type { Account } from "@/lib/pocketbase";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -109,11 +110,28 @@ export default function AccountForm({ account, usedColors = [], onSuccess, formI
   const [connectingGoogle, setConnectingGoogle] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
-  const [providerChoice, setProviderChoice] = useState<"manual" | null>(null);
+  const [providerChoice, setProviderChoice] = useState<"manual" | "gmail" | null>(null);
 
   const isEdit = !!account;
   const isOAuth2 = account?.auth_type === "oauth2";
-  const showForm = isEdit || providerChoice === "manual";
+  const showForm = isEdit || providerChoice !== null;
+
+  // Version pour tous : Gmail par MOT DE PASSE D'APPLICATION, guide pas a pas.
+  // La connexion Google au courrier (portee https://mail.google.com/, restreinte,
+  // audit de securite annuel) n'existe que sur l'instance de l'editeur.
+  function choisirGmail() {
+    setProviderChoice("gmail");
+    setForm((prev) => ({
+      ...prev,
+      label: prev.label || "Gmail",
+      imap_host: "imap.gmail.com",
+      imap_port: "993",
+      imap_security: "ssl",
+      smtp_host: "smtp.gmail.com",
+      smtp_port: "587",
+      smtp_security: "starttls",
+    }));
+  }
 
   function updateField<K extends keyof FormData>(key: K, value: FormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -213,7 +231,8 @@ export default function AccountForm({ account, usedColors = [], onSuccess, formI
             variant="outline"
             className="w-full justify-start"
             disabled={connectingGoogle}
-            onClick={handleGoogleOAuth}
+            onClick={EDITION_POUR_TOUS ? choisirGmail : handleGoogleOAuth}
+            data-ref="settings-account-provider-google"
           >
             {connectingGoogle ? (
               <Loader2 className="size-4 animate-spin" />
@@ -237,6 +256,27 @@ export default function AccountForm({ account, usedColors = [], onSuccess, formI
 
     {showForm && (
     <form id={formId} onSubmit={handleSubmit} className="space-y-8" data-ref="settings-account-form">
+      {providerChoice === "gmail" && (
+        <div data-ref="gmail-app-password-guide" className="space-y-2 rounded-xl bg-muted p-4 text-sm">
+          <p className="font-semibold">{t("gmail.title")}</p>
+          <ol className="list-decimal space-y-1.5 pl-5">
+            <li>
+              {t("gmail.step1")}{" "}
+              <a className="underline underline-offset-2" href="https://myaccount.google.com/signinoptions/twosv" target="_blank" rel="noreferrer">
+                {t("gmail.open")}
+              </a>
+            </li>
+            <li>
+              {t("gmail.step2")}{" "}
+              <a className="underline underline-offset-2" href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer">
+                {t("gmail.open")}
+              </a>
+            </li>
+            <li>{t("gmail.step3")}</li>
+          </ol>
+          <p className="text-muted-foreground">{t("gmail.note")}</p>
+        </div>
+      )}
       {/* OAuth2 badge for existing OAuth accounts */}
       {isOAuth2 && (
         <div className="flex items-center justify-between">

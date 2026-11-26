@@ -110,7 +110,7 @@ function normStatus(s: string): string {
   return (s || "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-import { aiFetch } from "./ai-budget";
+import { aiFetch, serverOpenRouterKey } from "./ai-budget";
 const TIMEOUT_MS = 25_000;
 const PER_MSG_CAP = 1_200;
 const TOTAL_CAP = 9_000;
@@ -1034,7 +1034,7 @@ export async function trackConversation(
   } = {}
 ): Promise<TrackConversationResult | null> {
   const apiKey =
-    opts.apiKey || (await getUserOpenRouterKey(userId)) || process.env.OPENROUTER_API_KEY || "";
+    opts.apiKey || (await getUserOpenRouterKey(userId)) || serverOpenRouterKey() || "";
   if (!apiKey) {
     console.warn(`[tracking] FAIL ${seedMessageId} : pas de cle OpenRouter`);
     return null;
@@ -1660,7 +1660,7 @@ export async function attachMessagesToTrackingItem(
   if (newThreads.size === 0) throw new Error("aucun thread valide a rattacher");
 
   const apiKey =
-    (await getUserOpenRouterKey(item.user)) || process.env.OPENROUTER_API_KEY || "";
+    (await getUserOpenRouterKey(item.user)) || serverOpenRouterKey() || "";
   if (!apiKey) throw new Error("pas de cle OpenRouter");
 
   const threads = new Set<string>(Array.isArray(item.thread_ids) ? item.thread_ids : []);
@@ -2523,7 +2523,7 @@ export async function rebuildFiche(
   clean = false
 ): Promise<number> {
   const apiKey =
-    (await getUserOpenRouterKey(userId)) || process.env.OPENROUTER_API_KEY || "";
+    (await getUserOpenRouterKey(userId)) || serverOpenRouterKey() || "";
   if (!apiKey) return 0;
   const item = await getTrackingItem(itemId);
   if (!item || item.user !== userId || item.archived) return 0;
@@ -2800,7 +2800,7 @@ export async function autoProcessMail(
   }
 
   const apiKey =
-    (await getUserOpenRouterKey(userId)) || process.env.OPENROUTER_API_KEY || "";
+    (await getUserOpenRouterKey(userId)) || serverOpenRouterKey() || "";
 
   let msg: PBMessage;
   try {
@@ -3030,7 +3030,7 @@ export function startStarredAnalyze(userId: string, days = 14): StarredAnalyzeSt
   void (async () => {
     try {
       const apiKey =
-        (await getUserOpenRouterKey(userId)) || process.env.OPENROUTER_API_KEY || "";
+        (await getUserOpenRouterKey(userId)) || serverOpenRouterKey() || "";
       if (!apiKey) {
         state.error = "OpenRouter API key manquante";
         return;
@@ -3192,7 +3192,7 @@ export function startRebuildAll(userId: string, clean = false): RebuildAllState 
   void (async () => {
     try {
       const apiKey =
-        (await getUserOpenRouterKey(userId)) || process.env.OPENROUTER_API_KEY || "";
+        (await getUserOpenRouterKey(userId)) || serverOpenRouterKey() || "";
       if (!apiKey) {
         state.error = "OpenRouter API key manquante";
         return;
@@ -3317,7 +3317,7 @@ export function startReprocessRecent(
   void (async () => {
     try {
       const apiKey =
-        (await getUserOpenRouterKey(userId)) || process.env.OPENROUTER_API_KEY || "";
+        (await getUserOpenRouterKey(userId)) || serverOpenRouterKey() || "";
       if (!apiKey) {
         state.error = "OpenRouter API key manquante";
         return;
@@ -3517,7 +3517,7 @@ export function startAnalyzeDates(userId: string): AnalyzeDatesState {
     let firstSampleTitle = "";
     try {
       const apiKey =
-        (await getUserOpenRouterKey(userId)) || process.env.OPENROUTER_API_KEY || "";
+        (await getUserOpenRouterKey(userId)) || serverOpenRouterKey() || "";
       if (!apiKey) {
         state.error = "OpenRouter API key manquante";
         return;

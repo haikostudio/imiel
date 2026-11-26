@@ -2,6 +2,7 @@
 
 const LLM_URL = "/api/ai";
 
+import { useIaDisponible } from "@/lib/ai-settings";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { RemoveScroll } from "react-remove-scroll";
@@ -728,6 +729,7 @@ function resolveReplyFromAccountId(msg: Message, accounts: Account[]): string | 
 }
 
 function ComposeForm({ mode, messageId, initialTo, onClose, onMetaChange, onHasFiles, onHasContent }: ComposeFormProps) {
+  const iaDispo = useIaDisponible();
   const t = useT();
   const language = useSettingsStore((s) => s.language);
   const editorRef = useRef<Editor | null>(null);
@@ -2077,7 +2079,7 @@ function ComposeForm({ mode, messageId, initialTo, onClose, onMetaChange, onHasF
   const moreMenu = (
       <ComposeMoreMenu
         aiBusy={aiBusy}
-        aiMenu={(close) => (
+        aiMenu={!iaDispo ? undefined : (close) => (
           <ComposeAiMenu
             busy={aiBusy}
             onDone={close}

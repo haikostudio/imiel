@@ -8,6 +8,10 @@ import { getFileIcon } from "@/lib/utils/file-icons";
 import { formatRelativeDate } from "@/lib/utils/date";
 import { isImageAttachment, type MessageAttachmentItem } from "@/lib/inline-images";
 import type { Message } from "@/lib/pocketbase";
+import { PREFIXE_PIECE, telechargerPiece, urlPiece } from "@/lib/cloud/actions";
+
+/** iMiel Cloud : piece jointe lue chez le fournisseur a l'ouverture. */
+const estCloud = (url: string) => url.startsWith(PREFIXE_PIECE);
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} o`;
@@ -42,6 +46,20 @@ export function AttachmentList({ message, items, onOpenImage }: AttachmentListPr
   const [preview, setPreview] = useState<HoverPreview | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const canHover = useRef(false);
+  // iMiel Cloud : vignettes des images lues a la demande (adresse blob:).
+  const [resolus, setResolus] = useState<Record<string, string>>({});
+  useEffect(() => {
+    for (const att of items || []) {
+      if (!estCloud(att.url) || resolus[att.id] || !isImageAttachment(att.filename, att.contentType)) continue;
+      void urlPiece(att.url).then((u) => setResolus((r) => ({ ...r, [att.id]: u }))).catch(() => {});
+    }
+  }, [items, resolus]);
+  const adresse = (att: MessageAttachmentItem) => resolus[att.id] || (estCloud(att.url) ? "" : att.url);
+  const telechargerCloud = (att: MessageAttachmentItem) => (e: React.MouseEvent) => {
+    if (!estCloud(att.url)) return;
+    e.preventDefault();
+    void telechargerPiece(att.url, att.filename);
+  };
 
   useEffect(() => {
     canHover.current = typeof window !== "undefined" && window.matchMedia?.("(hover: hover)").matches;
@@ -110,7 +128,8 @@ export function AttachmentList({ message, items, onOpenImage }: AttachmentListPr
               return (
                 <a
                   key={att.id}
-                  href={att.url}
+                  href={estCloud(att.url) ? "#" : att.url}
+                  onClick={telechargerCloud(att)}
                   download={att.filename}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -136,8 +155,8 @@ export function AttachmentList({ message, items, onOpenImage }: AttachmentListPr
               >
                 <button
                   type="button"
-                  onClick={() => { hidePreview(); onOpenImage?.(att.url); }}
-                  onMouseEnter={(e) => showPreview(att.url, e.currentTarget)}
+                  onClick={() => { hidePreview(); const u = adresse(att); if (u) onOpenImage?.(u); }}
+                  onMouseEnter={(e) => adresse(att) && showPreview(adresse(att), e.currentTarget)}
                   onMouseLeave={hidePreview}
                   className="flex min-w-0 flex-1 cursor-zoom-in items-center gap-2.5 text-left"
                   title={t("attachment.preview")}
@@ -145,7 +164,7 @@ export function AttachmentList({ message, items, onOpenImage }: AttachmentListPr
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={att.url}
+                    src={adresse(att) || undefined}
                     alt={att.filename}
                     loading="lazy"
                     className="bg-background size-9 shrink-0 rounded object-cover"
@@ -157,7 +176,8 @@ export function AttachmentList({ message, items, onOpenImage }: AttachmentListPr
                   </span>
                 </button>
                 <a
-                  href={att.url}
+                  href={estCloud(att.url) ? "#" : att.url}
+                  onClick={telechargerCloud(att)}
                   download={att.filename}
                   target="_blank"
                   rel="noopener noreferrer"

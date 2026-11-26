@@ -2,6 +2,7 @@
 // 90 derniers jours qui n'en ont pas encore. Process sequentiel, gentil avec
 // le budget OpenRouter (200ms entre items).
 
+import { serverOpenRouterKey } from "./ai-budget";
 import {
   listAccountsForUser,
   countRecords,
@@ -99,7 +100,7 @@ export function startCategoryBackfill(userId: string): BackfillState {
   void (async () => {
     try {
       const apiKey =
-        (await getUserOpenRouterKey(userId)) || process.env.OPENROUTER_API_KEY || "";
+        (await getUserOpenRouterKey(userId)) || serverOpenRouterKey() || "";
       if (!apiKey) {
         state.error = "OpenRouter API key manquante";
         return;

@@ -15,7 +15,7 @@
  */
 
 import { backgroundModel } from "./ai-models";
-import { aiFetch, parisDay } from "./ai-budget";
+import { aiFetch, parisDay, serverOpenRouterKey } from "./ai-budget";
 import {
   getUserOpenRouterKey,
   listAllNewsletterPosts,
@@ -427,7 +427,7 @@ export async function backfillNewsletterTags(): Promise<{ tagged: number; calls:
       for (const p of res.items) byUser.set(p.user, [...(byUser.get(p.user) || []), p]);
       let progressed = false;
       for (const [userId, list] of byUser) {
-        const apiKey = (await getUserOpenRouterKey(userId)) || process.env.OPENROUTER_API_KEY || "";
+        const apiKey = (await getUserOpenRouterKey(userId)) || serverOpenRouterKey() || "";
         if (!apiKey) {
           // Sans cle, on marque quand meme : sinon la boucle reprendrait ces posts.
           for (const p of list) await updateNewsletterPost(p.id, { tags_done: true });

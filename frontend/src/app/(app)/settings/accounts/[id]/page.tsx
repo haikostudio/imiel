@@ -17,6 +17,8 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Trash2, Save, History, Loader2, Paperclip, Pause, Play } from "lucide-react";
 import AccountForm from "@/components/settings/AccountForm";
+import { CloudBoxPanel } from "@/components/cloud/CloudBoxPanel";
+import { modeCloud } from "@/lib/cloud/config";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
 
@@ -185,6 +187,11 @@ export default function EditAccountPage() {
     } finally {
       setDeleting(false);
     }
+  }
+
+  // iMiel Cloud : ajout sans reglage, boite geree par le serveur de transfert.
+  if (!loading && modeCloud() && (isNew || account?.cloud_managed)) {
+    return <CloudBoxPanel account={isNew ? null : account} onRetour={() => navigate("/settings?tab=accounts")} />;
   }
 
   if (loading) {

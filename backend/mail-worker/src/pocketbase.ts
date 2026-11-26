@@ -1,4 +1,5 @@
 // Node 20+ has native fetch, FormData, Blob
+import { serviceDisabled } from "./local-mode";
 import {
   listExistingUidsFromSqlite,
   listExistingMessageIdsFromSqlite,
@@ -122,6 +123,8 @@ export interface PBContact {
 export interface PBAccount {
   id: string;
   user: string;
+  /** Boite iMiel Cloud : relevee par le serveur de transfert, jamais ici. */
+  cloud_managed?: boolean;
   label: string;
   email: string;
   display_name: string;
@@ -190,7 +193,8 @@ export async function findAccountByEmail(
 export async function listAccountsDueForSync(): Promise<PBAccount[]> {
   const result = (await pbFetch("/api/collections/accounts/records", {
     params: {
-      filter: "is_active=true",
+      // Boites iMiel Cloud : relevees par le serveur de transfert, jamais ici.
+      filter: "is_active=true && cloud_managed!=true",
       perPage: "200",
       sort: "last_synced_at",
     },
@@ -210,6 +214,7 @@ export interface PBFolder {
   unread_count: number;
   total_count: number;
   last_uid: number;
+  uid_validity?: number;
   created: string;
   updated: string;
 }
@@ -2108,6 +2113,9 @@ export async function getUserOpenRouterKey(userId: string): Promise<string> {
 
 /** Recupere la cle API Cerveau d'un utilisateur (vide si non configuree). */
 export async function getUserCerveauKey(userId: string): Promise<string> {
+  // Integration Cerveau propre a l'instance de l'editeur : eteinte quand
+  // CERVEAU_API_URL=off (app d'ordinateur, version pour tous).
+  if (serviceDisabled(process.env.CERVEAU_API_URL)) return "";
   try {
     const rec = (await pbFetch(
       `/api/collections/users/records/${userId}`,

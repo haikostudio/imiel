@@ -24,6 +24,21 @@ import path from "path";
 import { noReasoning } from "./ai-models";
 import { legacyRenamed } from "./renamed-file";
 
+/**
+ * Cle OpenRouter "de service" (traitements de fond sans cle utilisateur
+ * explicite). Instance de l'editeur : OPENROUTER_API_KEY. App d'ordinateur
+ * (version pour tous) : AUCUNE cle de l'editeur n'est embarquee (DEC-331) ;
+ * la cle saisie par l'utilisateur local est reprise ici (voir
+ * startLocalUserKeyRefresh dans index.ts). Vide = IA eteinte.
+ */
+let localUserKey = "";
+export function setLocalUserOpenRouterKey(key: string): void {
+  localUserKey = (key || "").trim();
+}
+export function serverOpenRouterKey(): string {
+  return process.env.OPENROUTER_API_KEY || localUserKey || "";
+}
+
 export const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 const TIMEZONE = "Europe/Paris";

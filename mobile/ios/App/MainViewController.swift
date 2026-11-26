@@ -11,6 +11,12 @@ class MainViewController: CAPBridgeViewController {
 
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(HaikoBridgePlugin())
+        #if IMIEL_COPIE_LOCALE
+        // Session de l'utilisateur local posee AVANT les scripts de la page
+        // (comme l'app d'ordinateur) : jamais d'ecran de connexion.
+        webView?.configuration.userContentController.addUserScript(
+            WKUserScript(source: LocalStack.scriptSession(), injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        #endif
     }
 
     override func viewDidLoad() {

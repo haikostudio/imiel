@@ -346,9 +346,10 @@ export default function IntroPage() {
 
   return (
     <div data-ref="overview-page" data-veil="" className="flex h-full flex-col bg-background">
-      <PullToRefresh onRefresh={handleRefresh}>
-        {/* Telephone : la barre du pied reserve elle-meme sa hauteur (zone
-            principale). Ordinateur : un peu plus d'air autour des blocs. */}
+      <PullToRefresh onRefresh={handleRefresh} dataRef="overview-scroll">
+        {/* Telephone : la place du rond flottant « Rediger » est reservee en
+            bas de la zone qui defile (globals.css, overview-scroll).
+            Ordinateur : un peu plus d'air autour des blocs. */}
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-3 pt-1 pb-6 md:gap-5 md:px-8 md:pt-7 md:pb-10">
           {/* Pas de grand titre "Vue d'ensemble" sur telephone (choix
               utilisateur, repete) : la page commence directement par ses blocs. */}

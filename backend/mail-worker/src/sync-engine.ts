@@ -234,7 +234,7 @@ async function connectIdle(accountId: string): Promise<void> {
     return;
   }
 
-  if (!account.is_active || account.protocol !== "imap") {
+  if (!account.is_active || account.protocol !== "imap" || account.cloud_managed) {
     stopIdle(accountId);
     return;
   }

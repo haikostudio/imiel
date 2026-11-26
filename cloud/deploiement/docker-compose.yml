@@ -1,0 +1,63 @@
+# iMiel Cloud (serveur de transfert) derriere Traefik (certificat Let's Encrypt).
+# ECRIT, NON DEPLOYE : la mise en service (serveur, DNS de sync.getimiel.com,
+# compte Stripe en mode reel, clients OAuth Google/Microsoft valides, APNs) est
+# une decision de l'editeur. Les valeurs viennent d'un fichier .env A COTE de ce
+# fichier, jamais du depot.
+#   cd cloud && docker compose -f deploiement/docker-compose.yml up -d --build
+services:
+  cloud:
+    build:
+      context: ..
+      dockerfile: deploiement/Dockerfile
+    restart: unless-stopped
+    environment:
+      NUAGE_CLE_REGLAGES: ${NUAGE_CLE_REGLAGES:?64 caracteres hexadecimaux, chiffre les reglages au repos}
+      NUAGE_SECRET: ${NUAGE_SECRET:?32 octets aleatoires en hexadecimal}
+      NUAGE_ADRESSE_PUBLIQUE: ${NUAGE_ADRESSE_PUBLIQUE:-https://sync.getimiel.com}
+      NUAGE_APP_URL: ${NUAGE_APP_URL:-https://app.getimiel.com}
+      NUAGE_SMTP: ${NUAGE_SMTP:?adresse SMTP des codes de confirmation et rappels}
+      NUAGE_EXPEDITEUR: ${NUAGE_EXPEDITEUR:-iMiel <hello@getimiel.com>}
+      NUAGE_GARDE_JOURS: ${NUAGE_GARDE_JOURS:-30}
+      NUAGE_STRIPE_CLE: ${NUAGE_STRIPE_CLE:-}
+      NUAGE_STRIPE_PRIX: ${NUAGE_STRIPE_PRIX:-}
+      NUAGE_STRIPE_SECRET_WEBHOOK: ${NUAGE_STRIPE_SECRET_WEBHOOK:-}
+      NUAGE_GOOGLE_ID: ${NUAGE_GOOGLE_ID:-}
+      NUAGE_GOOGLE_SECRET: ${NUAGE_GOOGLE_SECRET:-}
+      NUAGE_MICROSOFT_ID: ${NUAGE_MICROSOFT_ID:-}
+      NUAGE_MICROSOFT_SECRET: ${NUAGE_MICROSOFT_SECRET:-}
+      NUAGE_MISES_A_JOUR: /mises-a-jour
+      NUAGE_APNS_CLE: /secrets/apns.p8
+      NUAGE_APNS_ID_CLE: ${NUAGE_APNS_ID_CLE:-}
+      NUAGE_APNS_EQUIPE: ${NUAGE_APNS_EQUIPE:-}
+      NUAGE_APNS_SUJET: ${NUAGE_APNS_SUJET:-}
+      NUAGE_APNS_PROD: ${NUAGE_APNS_PROD:-1}
+    volumes:
+      - cloud_donnees:/donnees
+      - ./mises-a-jour:/mises-a-jour:ro
+      - ./secrets:/secrets:ro
+    networks: [traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.imiel-cloud.rule=Host(`sync.getimiel.com`)
+      - traefik.http.routers.imiel-cloud.entrypoints=websecure
+      - traefik.http.routers.imiel-cloud.tls.certresolver=letsencrypt
+      - traefik.http.services.imiel-cloud.loadbalancer.server.port=8787
+  # App web (app.getimiel.com) : fichiers statiques, la base vit dans le navigateur.
+  app-web:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ../app-web/site:/usr/share/nginx/html:ro
+      - ../app-web/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks: [traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.imiel-app-web.rule=Host(`app.getimiel.com`)
+      - traefik.http.routers.imiel-app-web.entrypoints=websecure
+      - traefik.http.routers.imiel-app-web.tls.certresolver=letsencrypt
+      - traefik.http.services.imiel-app-web.loadbalancer.server.port=80
+volumes:
+  cloud_donnees:
+networks:
+  traefik:
+    external: true

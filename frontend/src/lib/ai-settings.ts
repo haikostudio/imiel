@@ -1,4 +1,28 @@
+import { useSyncExternalStore } from "react";
 import pb from "@/lib/pocketbase";
+
+// Version POUR TOUS (app d'ordinateur, iPhone en copie complete) : aucune cle
+// d'IA de l'editeur n'est livree (DEC-331). L'IA n'apparait qu'une fois la cle
+// OpenRouter de l'utilisateur saisie (Reglages > IA).
+export const EDITION_POUR_TOUS = process.env.NEXT_PUBLIC_IMIEL_EDITION === "tous";
+
+// App web iMiel Cloud : pas de serveur d'app derriere l'interface (la base vit
+// dans le navigateur), donc pas d'IA, meme avec une cle.
+const APP_WEB = process.env.NEXT_PUBLIC_IMIEL_WEB === "1";
+
+export function iaDisponible(): boolean {
+  if (APP_WEB) return false;
+  return !EDITION_POUR_TOUS || !!getOpenRouterKey();
+}
+
+/** Vrai si les fonctions d'IA peuvent s'afficher (suit la session en direct). */
+export function useIaDisponible(): boolean {
+  return useSyncExternalStore(
+    (cb) => pb.authStore.onChange(cb),
+    iaDisponible,
+    () => !EDITION_POUR_TOUS && !APP_WEB
+  );
+}
 
 const LEGACY_LS_KEY = "imiel:openrouterApiKey";
 

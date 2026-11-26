@@ -1,10 +1,18 @@
 import PocketBase, { RecordModel } from "pocketbase";
+import { modeCloud } from "@/lib/cloud/config";
+
+// App web iMiel Cloud : la base vit dans le navigateur, installee AVANT le
+// client ci-dessous (fetch et temps reel des adresses /api/*). Constante de
+// fabrication : absente partout ailleurs.
+if (process.env.NEXT_PUBLIC_IMIEL_WEB === "1") require("@/lib/cloud/web/installer");
 
 export type { RecordModel };
 
 // --- Collection Types (aligned with PocketBase migration schema) ---
 
 export interface Account extends RecordModel {
+  /** iMiel Cloud : boite relevee par le serveur de transfert. */
+  cloud_managed?: boolean;
   user: string;
   label: string;
   email: string;
@@ -542,6 +550,8 @@ export async function updateMessageFlags(
   id: string,
   flags: { is_read?: boolean; is_starred?: boolean }
 ): Promise<void> {
+  // iMiel Cloud : le geste part chez le fournisseur par le serveur de transfert.
+  if (modeCloud()) return (await import("@/lib/cloud/actions")).cloudDrapeaux(id, flags);
   const res = await fetch(`/worker/message-flags/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -559,6 +569,7 @@ export async function updateMessageViaWorker(
   id: string,
   data: Record<string, unknown>
 ): Promise<void> {
+  if (modeCloud()) return (await import("@/lib/cloud/actions")).cloudMiseAJour(id, data);
   const res = await fetch(`/worker/message-update/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -571,6 +582,7 @@ export async function updateMessageViaWorker(
 }
 
 export async function deleteMessageViaWorker(id: string): Promise<void> {
+  if (modeCloud()) return (await import("@/lib/cloud/actions")).cloudSupprimer(id);
   const res = await fetch(`/worker/message-delete/${id}`, {
     method: "DELETE",
   });
@@ -644,6 +656,9 @@ export function getFileUrl(
   filename: string,
   thumb?: string
 ): string {
+  // iMiel Cloud : piece jointe sans contenu local, lue chez le fournisseur a
+  // l'ouverture (voir lib/cloud/actions.ts, urlPiece).
+  if (!filename && modeCloud() && (record.collectionName === "attachments" || "filename" in record)) return `imiel-cloud:${record.id}`;
   return pb.files.getURL(record, filename, { thumb });
 }
 
@@ -716,6 +731,8 @@ export async function sendMessage(
   messageId: string,
   files?: File[]
 ): Promise<{ status: string; message_id?: string }> {
+  // iMiel Cloud : envoi par le serveur de transfert (SMTP du fournisseur).
+  if (modeCloud()) return (await import("@/lib/cloud/actions")).cloudEnvoyer(accountId, messageId, files);
   // Call local mail-worker directly via /worker proxy
   // (bypasses PB hooks which run on production server and can't reach local worker)
   let res: Response;
@@ -764,6 +781,7 @@ export async function uploadDraftAttachments(
   files: File[],
   opts: { inline?: boolean } = {}
 ): Promise<UploadedDraftAttachment[]> {
+  if (modeCloud()) return (await import("@/lib/cloud/actions")).cloudPiecesBrouillon(messageId, files, !!opts.inline);
   const formData = new FormData();
   formData.append("messageId", messageId);
   if (opts.inline) formData.append("inline", "1");
@@ -782,6 +800,10 @@ export async function uploadDraftAttachments(
 }
 
 export async function deleteDraftAttachment(attachmentId: string): Promise<void> {
+  if (modeCloud()) {
+    await pb.send(`/api/cloud/piece-brouillon/${attachmentId}`, { method: "DELETE" });
+    return;
+  }
   const res = await fetch(`/worker/draft-attachments/${attachmentId}`, {
     method: "DELETE",
   });
@@ -794,6 +816,11 @@ export async function deleteDraftAttachment(attachmentId: string): Promise<void>
 export async function syncAccount(
   accountId: string
 ): Promise<{ success: boolean; newMessages?: number }> {
+  // iMiel Cloud : c'est le serveur de transfert qui releve ; on demande un tour.
+  if (modeCloud()) {
+    await (await import("@/lib/cloud/sync")).synchroniser();
+    return { success: true };
+  }
   // Le worker gere sync_status et la protection contre les syncs concurrentes
   // (activeSyncs avec timeout 10 min). Pas de garde cote frontend pour eviter les deadlocks.
   const controller = new AbortController();

@@ -1,5 +1,6 @@
 "use client";
 
+import { useIaDisponible } from "@/lib/ai-settings";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -117,6 +118,7 @@ function ThreadViewInner({
   headerActionsSlot,
   embeddedHeader,
 }: ThreadViewInnerProps) {
+  const iaDispo = useIaDisponible();
   const t = useT();
   const isMiel = useIsMiel();
   const { accounts: accs } = useAccounts();
@@ -1015,12 +1017,14 @@ function ThreadViewInner({
             message ; la note elle-meme est une bulle du fil (ThreadBriefBubble). */}
         {convo.dialogs}
 
+        {iaDispo && (
         <ThreadBriefPanel
           brief={brief}
           generatedAt={briefDate}
           open={briefOpen}
           onClose={() => setBriefOpen(false)}
         />
+        )}
 
         {/* Messages du fil, tous ouverts. Conteneur de requete (@container),
             garde pour des mesures en cqw (la colonne des messages n'en depend plus). */}

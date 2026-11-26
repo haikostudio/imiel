@@ -805,7 +805,7 @@ export default function NewslettersPage() {
           <DropdownMenuTrigger asChild>
             <MobileFooterButton icon={MoreVertical} label={t("more")} data-ref="newsletters-footer-more" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="top" className="w-52">
+          <DropdownMenuContent align="end" side="top" sideOffset={8} className="w-52">
             <DropdownMenuItem onClick={handleManualBackfill} disabled={backfilling}>
               <RefreshCw className={cn("size-4", backfilling && "animate-spin")} />
               {t("newsletters.refresh")}

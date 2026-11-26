@@ -34,7 +34,7 @@ import {
 import { calculateThreadId } from "./threading";
 import { type PBMessage, getAccount, createAccount, findAccountByEmail, createAttachment, getAttachment, deleteAttachment, getAttachmentsForMessage, createMessage, getMessage, findMessageByMessageId, updateAccount, updateMessage, updateMessageSafe, deleteMessage, findSpamFolder, listFolders, listMessages, listMessagesWithMissingAttachments } from "./pocketbase";
 import { getUserCerveauKey, getThreadBrief, pruneActivitiesOlderThan, listTrackingContextForChat } from "./pocketbase";
-import { generateGoogleAuthUrl, decodeState, exchangeCodeForTokens } from "./oauth";
+import { generateGoogleAuthUrl, decodeState, exchangeCodeForTokens, EDITION_TOUS, FOURNISSEUR_AGENDA } from "./oauth";
 import {
   type PBCalendarEvent,
   getCalendarGroup,
@@ -144,8 +144,17 @@ import {
   verifySignedParams,
 } from "./image-proxy";
 
+// Compile en CommonJS : les imports ne sont PAS remontes, celui-ci doit
+// preceder son premier usage (app.use ci-dessous).
+import { corsOptions, isLocalMode, listenHost, localGuard } from "./local-mode";
+import { setLocalUserOpenRouterKey } from "./ai-budget";
+import { getUserOpenRouterKey, listActiveUserIds } from "./pocketbase";
+
 const app = express();
-app.use(cors());
+// Mode local (app d'ordinateur) : gardes Host/Origin + CORS limite a l'app.
+// Hors mode local : comportement inchange (cors ouvert).
+app.use(isLocalMode() ? cors(corsOptions()) : cors());
+app.use(localGuard);
 app.use(
   express.json({
     limit: "10mb",
@@ -722,10 +731,10 @@ app.post("/oauth/google/callback", async (req: Request, res: Response) => {
   try {
     // Decode state to get userId + origin (origin needed to rebuild the exact
     // same redirect_uri used to obtain the code).
-    const { userId, origin } = decodeState(state);
+    const { userId, origin, verifier } = decodeState(state);
 
     // Exchange code for tokens
-    const tokens = await exchangeCodeForTokens(code, origin || undefined);
+    const tokens = await exchangeCodeForTokens(code, origin || undefined, verifier);
 
     const tokenData = {
       oauth_access_token: encrypt(tokens.access_token),
@@ -737,6 +746,19 @@ app.post("/oauth/google/callback", async (req: Request, res: Response) => {
     const existing = await findAccountByEmail(userId, tokens.email);
 
     let account;
+    if (EDITION_TOUS) {
+      // Version pour tous : le jeton ne vaut que pour l'AGENDA. Il se range sur
+      // la boite Gmail deja ajoutee par mot de passe d'application, dont la
+      // releve continue par IMAP comme avant.
+      if (!existing) {
+        res.status(409).json({ error: `Ajoutez d'abord la boite ${tokens.email} (mot de passe d'application), puis reliez son agenda.` });
+        return;
+      }
+      account = await updateAccount(existing.id, { ...tokenData, oauth_provider: FOURNISSEUR_AGENDA });
+      console.log(`Agenda Google relie a ${existing.id}`);
+      res.json({ success: true, accountId: account.id });
+      return;
+    }
     if (existing) {
       // Reconnect: update tokens and reactivate. On force auth_type=oauth2 +
       // provider : sinon un compte cree a l'origine en mot de passe (app
@@ -2912,8 +2934,29 @@ app.post("/device/invitations/:id/respond", async (req: Request, res: Response) 
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`mail-worker listening on port ${PORT}`);
+const LISTEN_HOST = listenHost();
+// App d'ordinateur : la cle d'IA saisie par l'utilisateur local sert aux
+// traitements de fond (aucune cle de l'editeur embarquee). Relue chaque minute.
+async function refreshLocalUserKey(): Promise<void> {
+  try {
+    const ids = await listActiveUserIds();
+    let key = "";
+    for (const id of ids) {
+      key = await getUserOpenRouterKey(id);
+      if (key) break;
+    }
+    setLocalUserOpenRouterKey(key);
+  } catch {
+    /* base pas encore prete : nouvel essai a la minute suivante */
+  }
+}
+
+const onListening = () => {
+  console.log(`mail-worker listening on ${LISTEN_HOST || "*"}:${PORT}`);
+  if (isLocalMode()) {
+    void refreshLocalUserKey();
+    setInterval(() => void refreshLocalUserKey(), 60_000);
+  }
   console.log(`PocketBase URL: ${process.env.POCKETBASE_URL || "http://127.0.0.1:8090"}`);
   startSyncEngine();
 
@@ -3018,4 +3061,6 @@ server.listen(PORT, () => {
       void notifyInactiveApiKeys().catch((err) => console.warn("[api-keys] check failed:", (err as Error).message));
     }, 6 * 60 * 60 * 1000);
   }, 5 * 60 * 1000);
-});
+};
+if (LISTEN_HOST) server.listen(PORT, LISTEN_HOST, onListening);
+else server.listen(PORT, onListening);

@@ -24,7 +24,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.backgroundColor = .black
+        #if IMIEL_COPIE_LOCALE
+        // Copie complete : la base locale demarre HORS du fil principal (jamais
+        // de blocage au lancement), puis la vue iMiel s'ouvre dessus.
+        let attente = UIViewController()
+        attente.view.backgroundColor = .black
+        let roue = UIActivityIndicatorView(style: .large)
+        roue.color = .white
+        roue.startAnimating()
+        roue.translatesAutoresizingMaskIntoConstraints = false
+        attente.view.addSubview(roue)
+        NSLayoutConstraint.activate([roue.centerXAnchor.constraint(equalTo: attente.view.centerXAnchor), roue.centerYAnchor.constraint(equalTo: attente.view.centerYAnchor)])
+        window.rootViewController = attente
+        DispatchQueue.global(qos: .userInitiated).async {
+            do { try LocalStack.demarrer() } catch { NSLog("IMIEL_LOCAL echec : %@", error.localizedDescription) }
+            DispatchQueue.main.async { window.rootViewController = MainViewController() }
+        }
+        #else
         window.rootViewController = MainViewController()
+        #endif
         window.makeKeyAndVisible()
         self.window = window
 
@@ -54,6 +72,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         let sandbox = false
         #endif
         Task { try? await HaikoAPI.registerPushToken(token, sandbox: sandbox) }
+        #if IMIEL_COPIE_LOCALE
+        // iMiel Cloud : le serveur de transfert notifie ce jeton a chaque
+        // nouveau mail (expediteur + sujet). L'interface le lui transmet
+        // (frontend/src/lib/cloud/sync.ts, evenement « imiel-apns »).
+        UserDefaults.standard.set(token, forKey: "imiel.apns")
+        let js = "window.__IMIEL_APNS__ = '\(token)'; window.dispatchEvent(new CustomEvent('imiel-apns', { detail: '\(token)' }));"
+        DispatchQueue.main.async {
+            (self.window?.rootViewController as? CAPBridgeViewController)?.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
+        }
+        #endif
         NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
     }
 

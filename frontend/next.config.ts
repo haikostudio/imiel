@@ -46,7 +46,8 @@ const CSP = [
   "img-src 'self' data: blob: https: http:",
   "font-src 'self' data:",
   "media-src 'self' data: blob: https:",
-  "connect-src 'self' https: wss: ws:",
+  // http://127.0.0.1 : serveur iMiel Cloud local (essais, auto-hebergement sur la machine).
+  "connect-src 'self' https: wss: ws: http://127.0.0.1:*",
   "worker-src 'self' blob:",
   "frame-src 'self' about: blob: data:",
   "object-src 'none'",
@@ -126,5 +127,15 @@ const nextConfig: NextConfig = {
     },
   ],
 };
+
+// Interface STATIQUE embarquee dans l'app iPhone (copie complete) : servie par
+// la base locale a la meme adresse (mobile/base/pbmobile). Ni serveur Next, ni
+// redirections, ni en-tetes : construite par mobile/scripts/construire-interface-locale.mjs.
+if (process.env.IMIEL_EXPORT === "1") {
+  nextConfig.output = "export";
+  delete nextConfig.rewrites;
+  delete nextConfig.headers;
+  nextConfig.images = { unoptimized: true };
+}
 
 export default nextConfig;

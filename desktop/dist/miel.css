@@ -1,0 +1,136 @@
+/* Genere par desktop/scripts/jetons-miel.mjs depuis frontend/src/app/miel.css : ne pas modifier a la main. */
+:root {
+  --background: #fffdf8;
+  --foreground: #1c1a17;
+  --card: #ffffff;
+  --card-foreground: #1c1a17;
+  --popover: #ffffff;
+  --popover-foreground: #1c1a17;
+  --primary: #151412;
+  --primary-foreground: #ffffff;
+  --secondary: #f6f1e8;
+  --secondary-foreground: #2a241c;
+  --muted: #f6f1e8;
+  --muted-foreground: #7e7366;
+  --accent: #fbf1dc;
+  --accent-foreground: #2a241c;
+  --border: transparent;
+  --input: rgba(140, 100, 30, 0.14);
+  --ring: #f2b127;
+  --sidebar: transparent;
+  --sidebar-foreground: #1c1a17;
+  --sidebar-accent: rgba(255, 255, 255, 0.6);
+  --sidebar-accent-foreground: #1c1a17;
+  --sidebar-border: transparent;
+  --unread: #1c1a17;
+
+  /* Jetons propres a Miel */
+  --miel-page: linear-gradient(135deg, #fdfaf4 0%, #f9f0df 100%);
+  /* Telephone (piste B, carte adb035) : voile miel pose PAR-DESSUS le fond
+     illustre, plus dore des le haut, pour que les blocs blancs s'en detachent. */
+  --miel-mobile-veil: linear-gradient(180deg, rgba(247, 233, 203, 0.62) 0%, rgba(242, 220, 168, 0.55) 50%, rgba(236, 203, 132, 0.6) 100%),
+    radial-gradient(120% 60% at 100% 100%, rgba(248, 201, 100, 0.45) 0%, rgba(248, 201, 100, 0) 70%);
+  --miel-honey: #f6b21c;
+  --miel-honey-grad: linear-gradient(180deg, #ffd247 0%, #f6b21c 100%);
+  --miel-honey-ink: #231a06;
+  --miel-honey-shadow: 0 12px 24px -10px rgba(240, 165, 20, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  --miel-honey-soft: #fdedbe;
+  --miel-active-grad: linear-gradient(180deg, #fff0c6, #fde6a8);
+  --miel-active-shadow: 0 6px 14px -8px rgba(230, 160, 20, 0.55);
+  --miel-active-ink: #1c1a17;
+  --miel-chip: #ffffff;
+  --miel-chip-shadow: 0 1px 2px rgba(90, 60, 10, 0.05), 0 6px 14px -8px rgba(120, 80, 10, 0.25);
+  --miel-field-shadow: 0 1px 2px rgba(90, 60, 10, 0.05), 0 8px 22px -10px rgba(120, 80, 10, 0.22);
+  --miel-dark-btn: #151412;
+  --miel-dark-btn-ink: #ffffff;
+  --miel-frame-shadow: 0 50px 100px -40px rgba(165, 115, 30, 0.45), 0 12px 30px -18px rgba(165, 115, 30, 0.25),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.95);
+  --miel-surface-list: rgba(255, 255, 255, 0.88);
+  --miel-surface-read: rgba(255, 255, 255, 0.4);
+  --miel-outline: rgba(255, 255, 255, 0.95);
+  --miel-outline-soft: rgba(255, 255, 255, 0.75);
+  --miel-shadow-list: 0 1px 2px rgba(90, 60, 10, 0.04), 0 22px 50px -26px rgba(150, 100, 20, 0.4);
+  --miel-shadow-read: 0 22px 50px -30px rgba(150, 100, 20, 0.3);
+  --miel-bubble: #ffffff;
+  --miel-bubble-shadow: 0 1px 2px rgba(60, 40, 10, 0.05), 0 14px 34px -14px rgba(60, 40, 10, 0.18);
+  --miel-pill: rgba(255, 255, 255, 0.85);
+  --miel-reply-fade: rgba(253, 246, 232, 0.97);
+  --miel-reply-fade-0: rgba(253, 246, 232, 0);
+  --miel-avatar-shadow: 0 2px 6px -1px rgba(60, 40, 10, 0.18);
+  --miel-grid-line: rgba(150, 110, 40, 0.1);
+  /* Pages a groupes (choix utilisateur carte e339f1, version C) : le grand
+     bloc est un VOILE clair qui laisse voir le fond dore, les groupes poses
+     dessus sont BLANCS, un fin trait separe leur entete. Jamais de creme
+     terne (« brun clair » refuse). */
+  --miel-surface-veil: rgba(255, 255, 255, 0.42);
+  --miel-veil-outline: rgba(255, 255, 255, 0.7);
+  --miel-surface-group: #ffffff;
+  --miel-group-shadow: 0 1px 2px rgba(90, 60, 10, 0.05), 0 10px 24px -16px rgba(120, 80, 10, 0.3);
+  --miel-group-rule: rgba(140, 100, 30, 0.13);
+  --miel-mine-ring: #f6c64a;
+  --miel-today-cell: #fdf1cf;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+  --background: #1e1913;
+  --foreground: #f4ecdf;
+  --card: #29221b;
+  --card-foreground: #f4ecdf;
+  --popover: #2b241c;
+  --popover-foreground: #f4ecdf;
+  --primary: #f4ecdf;
+  --primary-foreground: #1e1913;
+  --secondary: #30281f;
+  --secondary-foreground: #f4ecdf;
+  --muted: #30281f;
+  --muted-foreground: #a99a86;
+  --accent: #372d22;
+  --accent-foreground: #f4ecdf;
+  --border: transparent;
+  --input: rgba(255, 225, 170, 0.1);
+  --ring: #f2b127;
+  --sidebar: transparent;
+  --sidebar-foreground: #f4ecdf;
+  --sidebar-accent: rgba(255, 225, 170, 0.08);
+  --sidebar-accent-foreground: #f4ecdf;
+  --sidebar-border: transparent;
+  --unread: #f4ecdf;
+
+  --miel-page: linear-gradient(135deg, #1a150f 0%, #120e0a 100%);
+  /* Sombre : pas de voile (les cartes brunes se detachent deja). */
+  --miel-mobile-veil: linear-gradient(transparent, transparent);
+  --miel-honey-grad: linear-gradient(180deg, #ffcf4a 0%, #f5a915 100%);
+  --miel-honey-ink: #2b1c02;
+  --miel-honey-shadow: 0 8px 20px -6px rgba(240, 160, 20, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  --miel-honey-soft: rgba(255, 196, 60, 0.14);
+  --miel-active-grad: linear-gradient(180deg, rgba(255, 200, 70, 0.2), rgba(255, 180, 40, 0.13));
+  --miel-active-shadow: none;
+  --miel-active-ink: #ffd873;
+  --miel-chip: #30281f;
+  --miel-chip-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px -4px rgba(0, 0, 0, 0.4);
+  --miel-field-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px -4px rgba(0, 0, 0, 0.4);
+  --miel-dark-btn: linear-gradient(180deg, #ffcf4a 0%, #f5a915 100%);
+  --miel-dark-btn-ink: #2b1c02;
+  --miel-frame-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(255, 220, 160, 0.07);
+  --miel-surface-list: rgba(41, 34, 27, 0.94);
+  --miel-surface-read: rgba(33, 27, 21, 0.55);
+  --miel-outline: rgba(255, 220, 160, 0.07);
+  --miel-outline-soft: rgba(255, 220, 160, 0.06);
+  --miel-shadow-list: 0 2px 4px rgba(0, 0, 0, 0.25), 0 18px 44px -14px rgba(0, 0, 0, 0.6);
+  --miel-shadow-read: 0 18px 44px -20px rgba(0, 0, 0, 0.55);
+  --miel-bubble: #29221b;
+  --miel-bubble-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 18px 44px -14px rgba(0, 0, 0, 0.6);
+  --miel-pill: #30281f;
+  --miel-reply-fade: rgba(31, 25, 19, 0.96);
+  --miel-reply-fade-0: rgba(31, 25, 19, 0);
+  --miel-avatar-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  --miel-grid-line: rgba(255, 225, 170, 0.07);
+  --miel-surface-veil: rgba(20, 16, 12, 0.45);
+  --miel-veil-outline: rgba(255, 220, 160, 0.07);
+  --miel-surface-group: #2b241d;
+  --miel-group-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 14px 30px -16px rgba(0, 0, 0, 0.55);
+  --miel-group-rule: rgba(255, 220, 160, 0.08);
+  --miel-mine-ring: rgba(246, 190, 60, 0.6);
+  --miel-today-cell: rgba(255, 196, 60, 0.1);
+  }
+}

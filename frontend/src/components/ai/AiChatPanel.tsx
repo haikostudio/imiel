@@ -1,5 +1,6 @@
 "use client";
 
+import { useIaDisponible } from "@/lib/ai-settings";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bot, Check, CheckCheck, ChevronDown, CircleAlert, Copy, FileText, History, Loader2, MessageSquare, Mic, Paperclip, Search, Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -365,6 +366,12 @@ function ChatSteps({
 }
 
 export function AiChatPanel() {
+  const iaDispo = useIaDisponible();
+  if (!iaDispo) return null;
+  return <AiChatPanelActif />;
+}
+
+function AiChatPanelActif() {
   const t = useT();
   const stepLabel = (name: string) => {
     const key = `aiChat.step.${name}`;

@@ -17,7 +17,7 @@ import fs from "fs";
 import path from "path";
 import { categorizeMessageFull } from "./categorizer";
 import { decideImportance, type Importance } from "./importance";
-import { isBudgetExceeded, nextParisMidnight } from "./ai-budget";
+import { isBudgetExceeded, nextParisMidnight, serverOpenRouterKey } from "./ai-budget";
 import {
   getImportanceContext,
   getUserOpenRouterKey,
@@ -102,7 +102,7 @@ export async function runImportanceBackfillOnce(): Promise<void> {
     const users = await listActiveUserIds();
     outer: for (const userId of users) {
       const flags = await getUserPauseFlags(userId).catch(() => null);
-      const apiKey = (await getUserOpenRouterKey(userId).catch(() => "")) || process.env.OPENROUTER_API_KEY || "";
+      const apiKey = (await getUserOpenRouterKey(userId).catch(() => "")) || serverOpenRouterKey() || "";
       const accounts = await listAccountsForUser(userId);
       let count = 0;
       for (const account of accounts) {

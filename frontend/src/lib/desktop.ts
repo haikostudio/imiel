@@ -59,6 +59,13 @@ export function isDesktopApp(): boolean {
   );
 }
 
+// App d'ordinateur en mode « Sur cet ordinateur » (pile locale) : le script
+// d'initialisation pose window.__IMIEL_LOCAL__ (desktop/src-tauri/src/pile.rs).
+export function isLocalApp(): boolean {
+  if (typeof window === "undefined") return false;
+  return (window as unknown as { __IMIEL_LOCAL__?: boolean }).__IMIEL_LOCAL__ === true;
+}
+
 // L'app tourne-t-elle en PWA installee (mode standalone) ? Sur iOS/Android le
 // mode standalone ouvre par defaut les liens target="_blank" dans un volet de
 // navigation interne au lieu du navigateur systeme.

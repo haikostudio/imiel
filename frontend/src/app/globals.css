@@ -657,12 +657,26 @@ input[type="time"]::-webkit-datetime-edit {
   color: var(--muted-foreground);
 }
 
-/* Telephone : la barre d'actions du pied (MobileFooterBar, fixe, en portail)
-   reserve sa hauteur en bas de la zone principale tant qu'elle est montee
-   (<html data-mobile-footer>) : la fin des listes n'est jamais cachee. */
+/* Telephone : le pied (MobileFooterBar, fixe, en portail) n'est plus une
+   barre mais un rond « Rediger » ou une pilule FLOTTANTS, sans fond. Les
+   listes descendent donc jusqu'a la barre d'accueil (la zone principale ne
+   reserve que la safe-area) et passent SOUS le bouton ; c'est l'interieur de
+   chaque zone qui defile qui reserve la hauteur du bouton
+   (--mobile-footer-space), pour que le dernier element remonte au-dessus. */
 @media (max-width: 767px) {
+  html[data-mobile-footer] {
+    --mobile-footer-space: calc(5.5rem + max(0px, 0.75rem - env(safe-area-inset-bottom)));
+  }
   html[data-mobile-footer] [data-ref="app-main"] {
-    padding-bottom: calc(3.5rem + max(0.5rem, env(safe-area-inset-bottom)));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  html[data-mobile-footer] :is(
+    [data-ref="mail-virtual-list"],
+    [data-ref="tracking-list-scroll"],
+    [data-ref="newsletters-scroll"],
+    [data-ref="overview-scroll"]
+  ) > .overflow-y-auto {
+    padding-bottom: var(--mobile-footer-space);
   }
 }
 

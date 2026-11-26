@@ -1,5 +1,14 @@
+import { serverOpenRouterKey } from "./ai-budget";
 import { ImapFlow, MailboxObject, FetchMessageObject } from "imapflow";
 import { isDigestMessageId } from "./digest-id";
+
+/** UIDVALIDITY de la boite ouverte (imapflow la rend en bigint). */
+function uidValidityOf(mailbox: MailboxObject | undefined): { uid_validity?: number } {
+  const v = (mailbox as unknown as { uidValidity?: bigint | number } | undefined)?.uidValidity;
+  if (v === undefined || v === null) return {};
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? { uid_validity: n } : {};
+}
 import { decrypt } from "./crypto";
 import { parseEmail } from "./parser";
 import { calculateThreadId } from "./threading";
@@ -329,8 +338,11 @@ async function syncInbox(
 
     // Final counter refresh (best effort; last_uid is already persisted per
     // batch by fetchProcessRange).
-    const folderUpdate: { last_uid: number; total_count?: number; unread_count?: number } = {
+    const folderUpdate: { last_uid: number; total_count?: number; unread_count?: number; uid_validity?: number } = {
       last_uid: maxUid,
+      // UIDVALIDITY : sert a dedoublonner un meme mail releve par deux
+      // appareils (synchronisation par le nuage, compte+dossier+UIDVALIDITY+UID).
+      ...uidValidityOf(mailbox),
     };
 
     try {
@@ -397,7 +409,7 @@ export async function categorizeAndApplyFull(
   const fallbackImportance = input.currentImportance ?? null;
   try {
     const userKey = await getUserOpenRouterKey(userId);
-    const envKey = process.env.OPENROUTER_API_KEY || "";
+    const envKey = serverOpenRouterKey() || "";
     const apiKey = userKey || envKey;
     const keySource = userKey ? "user" : envKey ? "env" : "none";
     if (!apiKey) {
@@ -1261,7 +1273,8 @@ async function syncSentFolder(
         })
     );
 
-    const folderUpdate: { last_uid: number; total_count?: number } = {
+    const folderUpdate: { last_uid: number; total_count?: number; uid_validity?: number } = {
+      ...uidValidityOf(mailbox),
       last_uid: maxUid,
     };
 
@@ -1290,6 +1303,9 @@ export async function syncAccount(accountId: string): Promise<{
   newMessages: number;
 }> {
   const account = await getAccount(accountId);
+
+  // Boite iMiel Cloud : c'est le serveur de transfert qui la releve.
+  if (account.cloud_managed) return { folders: 0, newMessages: 0 };
 
   if (account.protocol !== "imap") {
     throw new Error(`Account ${accountId} is not an IMAP account`);

@@ -117,6 +117,11 @@ function getWsUrl(): string {
 
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
+    // App d'ordinateur tout-en-un : le releveur n'a pas de port fixe, le canal
+    // passe par le serveur de l'interface (/ws, server.custom.js).
+    if ((window as unknown as { __IMIEL_LOCAL__?: boolean }).__IMIEL_LOCAL__) {
+      return `ws://${window.location.host}/ws`;
+    }
     // In production (non-localhost), route through the app origin (proxied by custom server)
     // Use /ws (not /worker/ws) to avoid conflict with Next.js rewrites on /worker/:path*
     if (host !== "localhost" && host !== "127.0.0.1") {

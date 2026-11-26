@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useHashRouter } from "@/lib/hash-router";
-import { Settings, Mail, Bell, Ban, Filter, Folder, Tag, RefreshCw, Bot, CalendarDays, KeyRound, Monitor, LogOut, PenLine } from "lucide-react";
+import { Settings, Mail, Bell, Ban, Filter, Folder, Tag, RefreshCw, Bot, CalendarDays, KeyRound, Monitor, LogOut, PenLine, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/pocketbase";
@@ -25,6 +25,8 @@ import SyncSettings from "@/components/settings/SyncSettings";
 import CalendarSettings from "@/components/settings/CalendarSettings";
 import AiSettings from "@/components/settings/AiSettings";
 import DesktopSettings from "@/components/settings/DesktopSettings";
+import SubscriptionSettings from "@/components/settings/SubscriptionSettings";
+import { cloudDisponible } from "@/lib/cloud/config";
 import SignatureSettings from "@/components/settings/SignatureSettings";
 import ConnectivitySettings from "@/components/settings/ConnectivitySettings";
 import AccountsPage from "@/app/(app)/settings/accounts/page";
@@ -45,7 +47,12 @@ const NAV_ITEMS = [
   { value: "ai", icon: Bot, labelKey: "settings.ai" },
   { value: "connectivity", icon: KeyRound, labelKey: "settings.connectivity" },
   { value: "desktop", icon: Monitor, labelKey: "settings.desktop" },
+  { value: "abonnement", icon: CreditCard, labelKey: "settings.subscription" },
 ] as const;
+
+// « Abonnement » : seulement dans les apps reliees a iMiel Cloud (ordinateur en
+// mode Cloud, iPhone, app web).
+const navItems = () => NAV_ITEMS.filter((i) => i.value !== "abonnement" || cloudDisponible());
 
 export default function SettingsPage() {
   const t = useT();
@@ -82,7 +89,7 @@ export default function SettingsPage() {
               l'alignement sur l'item selectionne qui deborde en haut sous la
               status bar iOS). collisionPadding.top garde une marge safe-area. */}
           <SelectContent position="popper" collisionPadding={{ top: 8, bottom: 8 }}>
-            {NAV_ITEMS.map((item) => (
+            {navItems().map((item) => (
               <SelectItem key={item.value} value={item.value}>
                 <span className="flex items-center gap-2">
                   <item.icon className="size-4 shrink-0" />
@@ -98,7 +105,7 @@ export default function SettingsPage() {
         {/* Sidebar nav (desktop only) */}
         <nav data-ref="settings-nav" className="hidden shrink-0 flex-col border-r md:flex">
           <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-1.5 md:p-2">
-            {NAV_ITEMS.map((item) => (
+            {navItems().map((item) => (
               <Tooltip key={item.value}>
                 <TooltipTrigger asChild>
                   <button
@@ -148,6 +155,7 @@ export default function SettingsPage() {
             {activeTab === "ai" && <AiSettings />}
             {activeTab === "connectivity" && <ConnectivitySettings />}
             {activeTab === "desktop" && <DesktopSettings />}
+            {activeTab === "abonnement" && <SubscriptionSettings />}
           </div>
         </div>
       </div>

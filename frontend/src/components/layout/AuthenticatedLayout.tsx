@@ -29,6 +29,8 @@ import { TitleTooltips } from "@/components/ui/title-tooltips";
 import { AccountErrorBanner } from "@/components/layout/AccountErrorBanner";
 import { DesktopDownloadBanner } from "@/components/layout/DesktopDownloadBanner";
 import { TrackingUpdatesBanner } from "@/components/layout/TrackingUpdatesBanner";
+import { DesktopUpdateBanner } from "@/components/layout/DesktopUpdateBanner";
+import { CloudHost } from "@/components/cloud/CloudHost";
 import { CollapsibleTop } from "@/components/ui/collapsible-top";
 import { useListChromeAutoHide } from "@/lib/hooks/useListChromeAutoHide";
 import { useHashRouter } from "@/lib/hash-router";
@@ -176,8 +178,11 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
 
   return (
     <div data-ref="app-root" className="flex h-dvh flex-col safe-area-top">
+      {/* iMiel Cloud : ecran de compte, synchro, bandeau d'abonnement arrete. */}
+      <CloudHost />
       <AccountErrorBanner />
       <DesktopDownloadBanner />
+      <DesktopUpdateBanner />
       <div data-ref={mielDesktop ? "miel-frame" : undefined} className={mielDesktop ? undefined : "contents"}>
       <div data-ref="app-layout" className="flex min-h-0 flex-1">
       {!isDesktop ? (

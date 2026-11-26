@@ -60,6 +60,9 @@ export function pushDisabled(): boolean {
 }
 
 export function isGoogleOAuthAccount(a: Pick<PBAccount, "is_active" | "auth_type" | "oauth_provider">): boolean {
+  // « google-agenda » (version pour tous) : boite Gmail relevee par mot de passe
+  // d'application, dont seul l'agenda passe par Google.
+  if (a.is_active && a.oauth_provider === "google-agenda") return true;
   return a.is_active && a.auth_type === "oauth2" && (a.oauth_provider || "google").includes("google");
 }
 
@@ -402,7 +405,7 @@ export async function homeGoogleAccountId(userId: string, groups?: PBCalendarGro
   const def = gs.find((g) => g.is_default && g.account && g.google_calendar_id);
   if (def) return def.account;
   const res = (await pbAdminFetch("/api/collections/accounts/records", {
-    params: { filter: `user="${userId}" && is_active=true && auth_type="oauth2"`, sort: "created", perPage: "20" },
+    params: { filter: `user="${userId}" && is_active=true && (auth_type="oauth2" || oauth_provider="google-agenda")`, sort: "created", perPage: "20" },
   })) as { items: PBAccount[] };
   const first = res.items.find((a) => isGoogleOAuthAccount(a));
   return first ? first.id : null;

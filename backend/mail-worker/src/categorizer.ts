@@ -1,4 +1,4 @@
-import { aiFetch } from "./ai-budget";
+import { aiFetch, serverOpenRouterKey } from "./ai-budget";
 import { backgroundModel, FALLBACK_BACKGROUND_MODEL } from "./ai-models";
 import {
   type Importance,
@@ -187,7 +187,7 @@ export async function categorizeMessageFull(
   input: CategorizeInput,
   opts: { apiKey?: string; source?: string } = {}
 ): Promise<CategorizeResult | null> {
-  const apiKey = opts.apiKey || process.env.OPENROUTER_API_KEY;
+  const apiKey = opts.apiKey || serverOpenRouterKey();
   if (!apiKey) return null;
   const source = opts.source || "categorize";
   const model = backgroundModel("OPENROUTER_MODEL_CATEGORIZE");

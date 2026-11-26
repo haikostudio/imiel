@@ -10,10 +10,12 @@ import { cn } from "@/lib/utils";
  * Barre d'actions du PIED de l'ecran (telephone seulement, < 768 px).
  *
  * Choix utilisateur (carte « Finitions Miel sur mobile ») : les boutons PROPRES
- * a la page quittent la rangee sous l'entete pour cette barre fixe ; sur la vue
- * d'ensemble et les listes de mails, « Rediger » est un ROND au centre qui
- * depasse un peu par le haut tout en restant aligne sur les autres libelles.
- * Une page sans bouton ne la monte pas.
+ * a la page quittent la rangee sous l'entete pour ce pied fixe. Carte « Menu du
+ * bas en bouton flottant » : la barre n'a PLUS ni fond ni bordure. Vue
+ * d'ensemble et listes de mails = le rond « Rediger » SEUL, flottant, sans
+ * libelle (aria-label garde) ; Newsletters / Suivi = leurs boutons dans une
+ * PILULE flottante centree (data-ref mobile-footer-pill). Une page sans bouton
+ * ne la monte pas.
  *
  * - Rendue en PORTAIL dans <body> (aucun contexte d'empilement d'un ancetre
  *   ne la recouvre), z-40 : SOUS les tiroirs et fenetres (z-50), au-dessus du
@@ -53,38 +55,55 @@ export function MobileFooterBar({
   if (!mounted) return null;
 
   const items = Children.toArray(children);
-  if (compose) {
-    const composeBtn = (
-      <button
-        key="compose"
-        type="button"
-        data-ref="compose-fab"
-        onClick={onCompose}
-        aria-label={t("compose.fab")}
-        className="mobile-footer-item flex min-w-0 flex-1 flex-col items-center justify-end gap-1 text-[11px] font-semibold leading-none text-foreground"
+  const composeBtn = compose ? (
+    <button
+      key="compose"
+      type="button"
+      data-ref="compose-fab"
+      onClick={onCompose}
+      aria-label={t("compose.fab")}
+      className="mobile-footer-item pointer-events-auto flex shrink-0 items-center justify-center rounded-full"
+    >
+      <span
+        data-ref="compose-fab-disc"
+        className="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_10px_28px_-8px_rgba(0,0,0,0.45)] transition-transform active:scale-95"
       >
-        <span
-          data-ref="compose-fab-disc"
-          className="-mt-6 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-black/20 ring-4 ring-background transition-transform active:scale-95"
-        >
-          <PenSquare className="size-6" strokeWidth={1.8} />
-        </span>
-        <span>{t("compose.fab")}</span>
-      </button>
+        <PenSquare className="size-6" strokeWidth={1.8} />
+      </span>
+    </button>
+  ) : null;
+
+  // Rond seul (vue d'ensemble, listes de mails) : rien d'autre que lui.
+  // Sinon les boutons de la page tiennent dans une pilule flottante, le rond
+  // (s'il y en a un) au milieu.
+  let content: React.ReactNode;
+  if (items.length === 0) {
+    content = composeBtn;
+  } else {
+    if (composeBtn) items.splice(Math.ceil(items.length / 2), 0, composeBtn);
+    content = (
+      <div
+        data-ref="mobile-footer-pill"
+        className="pointer-events-auto inline-flex max-w-[calc(100%-24px)] items-center gap-1 rounded-full border border-border/60 bg-background/90 p-1 shadow-lg shadow-black/15 backdrop-blur-xl"
+      >
+        {items}
+      </div>
     );
-    items.splice(Math.ceil(items.length / 2), 0, composeBtn);
   }
 
+  // La barre elle-meme n'a ni fond ni bordure : elle ne fait que poser le rond
+  // ou la pilule au-dessus de la barre d'accueil, et laisse passer les touchers
+  // vers la liste a cote (pointer-events-none).
   return createPortal(
     <nav
       data-ref="mobile-footer-bar"
       className={cn(
-        "fixed inset-x-0 bottom-0 z-40 flex items-end border-t border-border/60 bg-background/95 px-1 pt-1.5 backdrop-blur-xl md:hidden",
-        "pb-[max(0.5rem,env(safe-area-inset-bottom))]",
+        "pointer-events-none fixed inset-x-0 bottom-0 z-40 flex items-end justify-center px-3 md:hidden",
+        "pb-[max(0.75rem,env(safe-area-inset-bottom))]",
         className
       )}
     >
-      {items}
+      {content}
     </nav>,
     document.body
   );
@@ -102,7 +121,7 @@ export const MobileFooterButton = forwardRef<
       type="button"
       data-active={active ? "" : undefined}
       className={cn(
-        "mobile-footer-item flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-1 py-1.5 text-[11px] leading-none text-muted-foreground transition-colors active:bg-accent disabled:opacity-50",
+        "mobile-footer-item flex w-[4.25rem] min-w-0 shrink-0 flex-col items-center gap-1 rounded-full px-1 py-2 text-[11px] leading-none text-muted-foreground transition-colors active:bg-accent disabled:opacity-50",
         active && "bg-accent font-semibold text-foreground",
         className
       )}
@@ -115,5 +134,5 @@ export const MobileFooterButton = forwardRef<
 });
 
 /** Place reservee en bas d'une zone qui defile sous la barre du pied
- *  (hauteur de la barre + debord du rond + barre d'accueil). */
-export const MOBILE_FOOTER_CLEARANCE = "calc(4.5rem + env(safe-area-inset-bottom))";
+ *  (rond de 56 px ou pilule + marge + barre d'accueil). */
+export const MOBILE_FOOTER_CLEARANCE = "calc(4.75rem + max(0.75rem, env(safe-area-inset-bottom)))";

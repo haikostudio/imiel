@@ -1,4 +1,4 @@
-import { aiFetch } from "./ai-budget";
+import { aiFetch, serverOpenRouterKey } from "./ai-budget";
 import { backgroundModel } from "./ai-models";
 const TIMEOUT_MS = 8_000;
 const MAX_BODY_CHARS = 2_000;
@@ -129,7 +129,7 @@ function parseResult(raw: string): ClassifyResult | null {
 export async function classifyMessage(
   input: ClassifyInput
 ): Promise<ClassifyResult | null> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = serverOpenRouterKey();
   if (!apiKey) return null;
 
   const model = backgroundModel("OPENROUTER_MODEL_CLASSIFY");

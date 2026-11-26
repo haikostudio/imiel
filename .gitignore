@@ -36,3 +36,16 @@ backend/pb_data/*.db-wal
 .env
 .env.*
 !.env.example
+
+# App d'ordinateur : pile locale assemblee par desktop/scripts/preparer-pile.mjs
+desktop/src-tauri/ressources/
+desktop/src-tauri/target/
+# Ecran de premier lancement de l'app d'ordinateur (dist/ est ignore ailleurs)
+!desktop/dist/
+
+# iPhone copie complete : produits de fabrication (mobile/scripts/construire-interface-locale.mjs, gomobile bind)
+mobile/ios/Pbmobile.xcframework/
+mobile/ios/App/local/
+
+# App web iMiel Cloud : fichiers construits (construire-interface-locale.mjs --web)
+cloud/app-web/site/

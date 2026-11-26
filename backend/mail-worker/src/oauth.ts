@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from "crypto";
 import { encrypt, decrypt } from "./crypto";
 import { type PBAccount, updateAccount } from "./pocketbase";
 
@@ -14,13 +15,49 @@ const SCOPES = [
   "https://www.googleapis.com/auth/calendar",
 ];
 
+// Version POUR TOUS (app d'ordinateur) : Google ne sert qu'a l'AGENDA.
+// Client OAuth de type « ordinateur » (retour sur 127.0.0.1, PKCE), portee
+// calendar seule : la portee https://mail.google.com/ (restreinte, audit de
+// securite annuel) reste propre a l'instance de l'editeur ; le courrier Gmail
+// passe par un mot de passe d'application. Le jeton d'agenda est range sur la
+// boite Gmail deja ajoutee (oauth_provider « google-agenda »).
+export const EDITION_TOUS = process.env.IMIEL_EDITION === "tous";
+export const FOURNISSEUR_AGENDA = "google-agenda";
+const SCOPES_AGENDA = [
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/userinfo.profile",
+  "https://www.googleapis.com/auth/calendar",
+];
+
+export function scopesGoogle(): string[] {
+  return EDITION_TOUS ? SCOPES_AGENDA : SCOPES;
+}
+
+/** PKCE (RFC 7636) : verificateur aleatoire et son defi S256. */
+export function pkce(): { verifier: string; challenge: string } {
+  const verifier = randomBytes(32).toString("base64url");
+  return { verifier, challenge: createHash("sha256").update(verifier).digest("base64url") };
+}
+
+export function googleClientConfigured(): boolean {
+  return EDITION_TOUS ? !!process.env.GOOGLE_DESKTOP_CLIENT_ID : !!process.env.GOOGLE_CLIENT_ID;
+}
+
 function getGoogleClientId(): string {
+  if (EDITION_TOUS) {
+    const desk = process.env.GOOGLE_DESKTOP_CLIENT_ID;
+    if (!desk) throw new Error("Agenda Google non configure dans cette version (GOOGLE_DESKTOP_CLIENT_ID)");
+    return desk;
+  }
   const id = process.env.GOOGLE_CLIENT_ID;
   if (!id) throw new Error("GOOGLE_CLIENT_ID environment variable is required");
   return id;
 }
 
 function getGoogleClientSecret(): string {
+  // Client « ordinateur » : son secret n'est pas confidentiel (Google le
+  // documente ainsi), la protection vient de PKCE et du retour local.
+  if (EDITION_TOUS) return process.env.GOOGLE_DESKTOP_CLIENT_SECRET || "";
   const secret = process.env.GOOGLE_CLIENT_SECRET;
   if (!secret) throw new Error("GOOGLE_CLIENT_SECRET environment variable is required");
   return secret;
@@ -46,6 +83,8 @@ function buildRedirectUri(origin?: string): string {
 export interface DecodedState {
   userId: string;
   origin: string;
+  /** Verificateur PKCE (version pour tous), voyage chiffre dans le state. */
+  verifier?: string;
 }
 
 /**
@@ -54,16 +93,18 @@ export interface DecodedState {
  * code-exchange step can rebuild the exact same redirect_uri.
  */
 export function generateGoogleAuthUrl(userId: string, origin?: string): string {
-  const state = encrypt(`${userId}|${origin || ""}`);
+  const p = EDITION_TOUS ? pkce() : null;
+  const state = encrypt(`${userId}|${origin || ""}${p ? `|${p.verifier}` : ""}`);
 
   const params = new URLSearchParams({
     client_id: getGoogleClientId(),
     redirect_uri: buildRedirectUri(origin),
     response_type: "code",
-    scope: SCOPES.join(" "),
+    scope: scopesGoogle().join(" "),
     access_type: "offline",
     prompt: "consent",
     state,
+    ...(p ? { code_challenge: p.challenge, code_challenge_method: "S256" } : {}),
   });
 
   return `${GOOGLE_AUTH_URL}?${params.toString()}`;
@@ -77,7 +118,13 @@ export function decodeState(state: string): DecodedState {
   const raw = decrypt(state);
   const idx = raw.indexOf("|");
   if (idx === -1) return { userId: raw, origin: "" };
-  return { userId: raw.slice(0, idx), origin: raw.slice(idx + 1) };
+  const reste = raw.slice(idx + 1);
+  const j = reste.lastIndexOf("|");
+  // Un verificateur PKCE (base64url, 43 car.) ne contient jamais « | » ni « : ».
+  if (j !== -1 && /^[A-Za-z0-9_-]{43,128}$/.test(reste.slice(j + 1))) {
+    return { userId: raw.slice(0, idx), origin: reste.slice(0, j), verifier: reste.slice(j + 1) };
+  }
+  return { userId: raw.slice(0, idx), origin: reste };
 }
 
 interface OAuthTokens {
@@ -91,7 +138,7 @@ interface OAuthTokens {
 /**
  * Exchange authorization code for tokens and fetch user info.
  */
-export async function exchangeCodeForTokens(code: string, origin?: string): Promise<OAuthTokens> {
+export async function exchangeCodeForTokens(code: string, origin?: string, verifier?: string): Promise<OAuthTokens> {
   const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -101,6 +148,7 @@ export async function exchangeCodeForTokens(code: string, origin?: string): Prom
       client_secret: getGoogleClientSecret(),
       redirect_uri: buildRedirectUri(origin),
       grant_type: "authorization_code",
+      ...(verifier ? { code_verifier: verifier } : {}),
     }),
   });
 

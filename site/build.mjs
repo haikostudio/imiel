@@ -2,20 +2,20 @@
 // Fabrique la vitrine statique getimiel.com dans site/dist (aucune dependance).
 //   node site/build.mjs            -> site/dist
 //   SITE_URL=https://getimiel.com   (adresse canonique, par defaut getimiel.com)
-// Les positions de la page d'accueil sur ordinateur reprennent la maquette
-// validee au cadrage (scene de 1440 px de large, hauteur STAGE_H).
+// La page d'accueil est en flux ; seule la scene de la demo (1440 px, mise a
+// l'echelle par --z) garde des positions fixes. Le fil et l'avion sont traces
+// par app.js a partir des boites reelles de la page.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { T, LANGS, PATHS, GITHUB, RELEASES, CONTACT } from './src/content.mjs';
+import { T, LANGS, PATHS, GITHUB, RELEASES, CONTACT, APP_WEB } from './src/content.mjs';
 import * as W from './src/widgets.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(ROOT, 'src');
 const OUT = path.join(ROOT, 'dist');
 const SITE = (process.env.SITE_URL || 'https://getimiel.com').replace(/\/$/, '');
-const STAGE_H = 8330;
 
 // ---------- icones (traits Lucide) ----------
 const I = {
@@ -43,19 +43,22 @@ const I = {
   cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
   laptop: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M2 20h20"/>',
   plus: '<path d="M12 5v14M5 12h14"/>', minus: '<path d="M5 12h14"/>',
-  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>', server: '<rect x="2" y="3" width="20" height="8" rx="2"/><rect x="2" y="13" width="20" height="8" rx="2"/><path d="M6 7h.01M6 17h.01"/>',
+  flash: '<path d="M9 2h6l-1 7h4l-8 13 2-9H8z"/>', cam: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>', close: '<path d="M18 6 6 18M6 6l12 12"/>', check: '<path d="M20 6 9 17l-5-5"/>', server: '<rect x="2" y="3" width="20" height="8" rx="2"/><rect x="2" y="13" width="20" height="8" rx="2"/><path d="M6 7h.01M6 17h.01"/>',
 };
 const ico = (k, s = 14, extra = '') => `<svg class="ico${extra ? ' ' + extra : ''}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[k]}</svg>`;
 const SVC_ICONS = ['mail', 'cal', 'users', 'brief', 'news', 'spark'];
 const SVC_KEYS = ['inbox', 'cal', 'contacts', 'suivi', 'news', 'ai'];
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 const strip = (s) => String(s).replace(/<br>/g, ' ').replace(/<[^>]+>/g, '');
-const pos = (o) => Object.entries(o).map(([k, v]) => `--${k}:${typeof v === 'number' ? v + 'px' : v}`).join(';');
 
 // ---------- fichiers statiques (empreinte pour le cache) ----------
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
 fs.cpSync(path.join(SRC, 'assets'), path.join(OUT, 'assets'), { recursive: true });
+// Manifeste signe des mises a jour de l'app d'ordinateur (s'il a ete produit
+// par desktop/scripts/manifeste-mises-a-jour.mjs) : l'app le lit ici.
+if (fs.existsSync(path.join(SRC, 'mises-a-jour'))) fs.cpSync(path.join(SRC, 'mises-a-jour'), path.join(OUT, 'mises-a-jour'), { recursive: true });
 const hash = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex').slice(0, 10);
 fs.copyFileSync(path.join(SRC, 'site.css'), path.join(OUT, 'assets', 'site.css'));
 fs.copyFileSync(path.join(SRC, 'app.js'), path.join(OUT, 'assets', 'app.js'));
@@ -63,46 +66,18 @@ const CSS_V = hash(path.join(SRC, 'site.css'));
 const JS_V = hash(path.join(SRC, 'app.js'));
 const IMG = (n) => `/assets/img/${n}`;
 
-// ---------- le fil : chemin Catmull-Rom de la maquette validee ----------
-const arcY = (x) => 612 + 0.00066 * (x - 720) ** 2;
-const RY = (i) => 1560 + 300 + i * 430;
-const stX = [702, 758, 676, 790, 660, 742];
-const stY = (i) => RY(i) + 175;
-const arcPts = [150, 190, 280, 370, 465, 560, 640, 720, 800, 880, 975, 1070, 1160, 1250, 1330].map((x) => [x, arcY(x)]);
-const mids = [[740, 0], [712, -10], [735, 14], [722, -8], [700, 10]];
-const pts = [...arcPts, [1408, 1000], [1418, 1230], [1414, 1470], [1404, 1700], [1260, 1812], [980, 1832], [790, 1880], [722, 1960],
-  ...[0, 1, 2, 3, 4, 5].flatMap((i) => { const a = [stX[i], stY(i)]; if (i === 5) return [a]; const m = mids[i]; return [a, [m[0], stY(i) + 215 + m[1]]]; }),
-  [716, 4380], [640, 4520], [420, 4575], [150, 4590], [36, 4700], [30, 5000], [38, 5300], [120, 5395], [420, 5418], [800, 5405], [1180, 5420], [1385, 5460], [1418, 5700], [1410, 5950], [1402, 6100], [1200, 6145], [800, 6150], [420, 6142], [150, 6160], [52, 6300], [60, 6600], [48, 6860], [130, 6935], [420, 6950], [640, 6965], [702, 7050], [698, 7250], [740, 7350], [1000, 7385], [1300, 7400], [1412, 7500], [1415, 7700], [1330, 7840], [1000, 7870], [800, 7872], [722, 7896]];
-function catmull(p) {
-  let d = `M ${p[0][0]} ${p[0][1].toFixed(1)}`;
-  for (let i = 0; i < p.length - 1; i++) {
-    const p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p2;
-    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
-    d += ` C ${c1[0].toFixed(1)} ${c1[1].toFixed(1)}, ${c2[0].toFixed(1)} ${c2[1].toFixed(1)}, ${p2[0]} ${(+p2[1]).toFixed(1)}`;
-  }
-  return d;
-}
-const PATH = catmull(pts);
-const thread = `<svg class="thread desk-only" width="1440" height="${STAGE_H}" viewBox="0 0 1440 ${STAGE_H}" aria-hidden="true" data-thread="desk">
-<defs><mask id="flown" maskUnits="userSpaceOnUse" x="-50" y="-50" width="1540" height="${STAGE_H + 100}"><path data-mask d="${PATH}" stroke="#fff" stroke-width="30" fill="none" stroke-dasharray="0 999999"/></mask></defs>
-<path class="dim" data-path d="${PATH}" stroke-width="2" stroke-dasharray="11 9" stroke-linecap="round" fill="none"/>
-<g mask="url(#flown)"><path class="lit" d="${PATH}" stroke-width="2.8" stroke-dasharray="11 9" stroke-linecap="round" fill="none"/></g></svg>
-<svg class="thread mob-only" aria-hidden="true" data-thread="mob"><defs><mask id="flownm" maskUnits="userSpaceOnUse"><path data-mask stroke="#fff" stroke-width="24" fill="none" stroke-dasharray="0 999999"/></mask></defs>
-<path class="dim" data-path stroke-width="2" stroke-dasharray="9 8" stroke-linecap="round" fill="none"/><g mask="url(#flownm)"><path class="lit" stroke-width="2.6" stroke-dasharray="9 8" stroke-linecap="round" fill="none"/></g></svg>
-<img class="plane" src="${IMG('plane.webp')}" width="63" height="65" alt="" data-plane>`;
+// ---------- le fil et l'avion : trace calcule par app.js sur les boites reelles ----------
+const thread = `<svg class="thread" data-thread aria-hidden="true"><defs><mask id="flown" maskUnits="userSpaceOnUse"><path data-mask stroke="#fff" stroke-width="34" fill="none" stroke-dasharray="0 999999"/></mask></defs>
+<path class="dim" data-path stroke-width="1.6" stroke-dasharray="8 11" stroke-linecap="round" fill="none"/><g mask="url(#flown)"><path class="lit" stroke-width="2" stroke-dasharray="8 11" stroke-linecap="round" fill="none"/></g></svg>
+<img class="plane" src="${IMG('plane.webp')}" width="60" height="62" alt="" data-plane>`;
 
-// ---------- lumiere doree (maquette validee) ----------
-const streak = (d, o, id) => `<path d="${d}" stroke="url(#${id})" stroke-width="26" fill="none" filter="url(#b22)" opacity="${o * 0.5}"/><path d="${d}" stroke="url(#${id})" stroke-width="6" fill="none" filter="url(#b8)" opacity="${o * 0.8}"/><path d="${d}" stroke="url(#${id})" stroke-width="1.6" fill="none" filter="url(#b2)" opacity="${o}"/>`;
-const glows = [[720, 1000, 640, 320, 1], [1290, 120, 260, 200, 0.55], [120, 330, 240, 200, 0.45], [1200, 2300, 420, 300, 0.35], [200, 3500, 380, 300, 0.35], [1240, 4840, 420, 320, 0.4], [300, 6050, 400, 300, 0.3], [720, 7600, 620, 300, 0.6]];
-const light = `<svg class="light desk-only" viewBox="0 0 1440 ${STAGE_H}" preserveAspectRatio="none" aria-hidden="true"><defs>
+// ---------- lumiere doree du haut (pleine largeur) ----------
+const streak = (d, id) => `<path d="${d}" stroke="url(#${id})" stroke-width="26" fill="none" filter="url(#b22)" opacity=".45"/><path d="${d}" stroke="url(#${id})" stroke-width="5" fill="none" filter="url(#b8)" opacity=".6"/>`;
+const light = `<div class="bgfx" aria-hidden="true"><svg class="streaks" viewBox="0 0 1440 1200" preserveAspectRatio="none"><defs>
 <linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#ffb21e" stop-opacity="0"/><stop offset=".5" stop-color="#ffc34a" stop-opacity=".9"/><stop offset="1" stop-color="#ff9e10" stop-opacity="0"/></linearGradient>
 <linearGradient id="g2" x1="1" x2="0"><stop offset="0" stop-color="#ffb21e" stop-opacity="0"/><stop offset=".5" stop-color="#ffcc5a" stop-opacity=".85"/><stop offset="1" stop-color="#ff9e10" stop-opacity="0"/></linearGradient>
-<filter id="b8"><feGaussianBlur stdDeviation="8"/></filter><filter id="b22"><feGaussianBlur stdDeviation="22"/></filter><filter id="b2"><feGaussianBlur stdDeviation="1.2"/></filter>
-<radialGradient id="r1"><stop offset="0" stop-color="#d98a12" stop-opacity=".42"/><stop offset="1" stop-color="#d98a12" stop-opacity="0"/></radialGradient></defs>
-${glows.map(([x, y, rx, ry, o]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="url(#r1)" opacity="${o}"/>`).join('')}
-${streak('M-40 360 C 220 300 330 120 620 60', 1, 'g1')}${streak('M820 40 C 1080 10 1250 160 1480 70', 1, 'g2')}${streak('M-60 560 C 120 520 180 460 260 380', 0.6, 'g1')}
-${streak('M1500 5300 C 1300 5210 1180 5430 980 5350', 0.7, 'g2')}${streak('M-60 7420 C 300 7300 520 7580 900 7460', 0.7, 'g1')}${streak('M900 7880 C 1100 7810 1250 7920 1500 7800', 0.6, 'g2')}
-</svg>`;
+<filter id="b8"><feGaussianBlur stdDeviation="8"/></filter><filter id="b22"><feGaussianBlur stdDeviation="22"/></filter></defs>
+${streak('M-40 380 C 220 300 330 120 620 50', 'g1')}${streak('M820 40 C 1080 10 1250 160 1480 70', 'g2')}</svg></div>`;
 
 // ---------- morceaux communs ----------
 function head(t, page, alt) {
@@ -128,153 +103,179 @@ function head(t, page, alt) {
 <link rel="preload" href="/assets/fonts/fraunces-480.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/assets/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
 <script>(function(){var d=document.documentElement,t=null;try{t=localStorage.getItem('imiel-theme')}catch(e){}
 d.setAttribute('data-theme',t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));
+if(!matchMedia('(prefers-reduced-motion: reduce)').matches)d.classList.add('anim');d.classList.add('js');
 function z(){d.style.setProperty('--z',Math.min(1,innerWidth/1440))}z();addEventListener('resize',z);
 if(d.hasAttribute('data-root')&&!/bot|crawl|spider|slurp|lighthouse|preview/i.test(navigator.userAgent)){var c=null;try{c=localStorage.getItem('imiel-lang')}catch(e){}
 if(!c){var L=(navigator.languages||[navigator.language||'fr']).map(function(x){return String(x).slice(0,2).toLowerCase()});for(var i=0;i<L.length;i++){if(L[i]==='fr')break;if(L[i]==='en'||L[i]==='de'||L[i]==='it'){location.replace(JSON.parse(d.getAttribute('data-alt'))[L[i]]);break}}}}})();</script>
 <link rel="stylesheet" href="/assets/site.css?v=${CSS_V}">${ld}</head>`;
 }
 
+// Un retour a la ligne garde son espace quand il est masque sur telephone.
+const br = (s) => String(s).replace(/<br>/g, ' <br>');
+// Libelle double : le texte bascule au survol (la copie est cachee aux lecteurs d'ecran).
+const roll = (txt, attr = '') => `<span class="roll"><span class="r1"${attr}>${txt}</span><span class="r2" aria-hidden="true"${attr}>${txt}</span></span>`;
+
 function nav(t, page) {
   const h = PATHS.home[t.lang];
   const langs = LANGS.map((l) => `<li><a href="${PATHS[page][l]}" hreflang="${l}" lang="${l}" data-lang="${l}"${l === t.lang ? ' aria-current="true"' : ''}>${T[l].langName}</a></li>`).join('');
-  return `<header class="nav" data-nav>
+  const menuLinks = [[`${h}#services`, t.nav.features], [`${h}#tarifs`, t.nav.pricing], [`${h}#apps`, t.nav.apps], [`${h}#code`, t.nav.code], [`${h}#faq`, t.nav.faq]];
+  // Menu du telephone : un panneau pose PAR-DESSUS la page, sous la barre (la barre ne grandit pas).
+  const panel = `<div class="mpanel glass" id="menu-tel" data-mpanel hidden><nav aria-label="${esc(t.nav.menu)}">${menuLinks.map(([href, x]) => `<a href="${href}">${x}</a>`).join('')}<a href="${GITHUB}" rel="noopener">${ico('github', 20)} ${t.nav.source}</a></nav>
+<a class="btn btn-gold mdl" href="${PATHS.download[t.lang]}">${t.nav.download} ${ico('arrow', 20)}</a></div>`;
+  return `<header class="topnav"><div class="navin" data-nav>
 <a class="brand" href="${h}" aria-label="iMiel"><img src="${IMG('logo.webp')}" width="30" height="30" alt=""><b>iMiel</b></a>
-<nav class="links" aria-label="${esc(t.nav.menu)}"><a href="${h}#services">${t.nav.features}</a><a href="${h}#apps">${t.nav.apps}</a><a href="${h}#code">${t.nav.code}</a><a href="${h}#faq">${t.nav.faq}</a></nav>
+<nav class="links" aria-label="${esc(t.nav.menu)}">${menuLinks.map(([href, x]) => `<a href="${href}">${roll(x)}</a>`).join('')}</nav>
 <div class="grow"></div>
-<details class="langsel"><summary aria-label="${esc(t.nav.lang)}">${ico('globe', 15)} ${t.lang.toUpperCase()} ${ico('down', 12)}</summary><ul class="glass">${langs}</ul></details>
-<button class="iconbtn" type="button" data-theme-toggle aria-label="${esc(t.nav.theme)}">${ico('moon', 16, 'moon')}${ico('sun', 16, 'sun')}</button>
-<a class="pill src" href="${GITHUB}" rel="noopener">${ico('github', 15)} ${t.nav.source}</a>
-<a class="pill gold dl" href="${PATHS.download[t.lang]}">${t.nav.download}</a>
-<button class="iconbtn burger" type="button" data-burger aria-label="${esc(t.nav.menu)}" aria-expanded="false">${ico('menu', 20)}</button>
-</header>`;
+<details class="langsel"><summary aria-label="${esc(t.nav.lang)}">${ico('globe', 20)} ${t.lang.toUpperCase()} ${ico('down', 14)}</summary><ul class="glass">${langs}</ul></details>
+<button class="iconbtn" type="button" data-theme-toggle aria-label="${esc(t.nav.theme)}">${ico('moon', 22, 'moon')}${ico('sun', 22, 'sun')}</button>
+<a class="pill2 ghostp src" href="${GITHUB}" rel="noopener">${ico('github', 18)} ${roll(t.nav.source)}</a>
+<a class="pill2 goldp dl" href="${PATHS.download[t.lang]}">${roll(t.nav.download)}</a>
+<button class="iconbtn burger" type="button" data-burger aria-label="${esc(t.nav.menu)}" aria-expanded="false" aria-controls="menu-tel">${ico('menu', 24, 'm-open')}${ico('close', 24, 'm-close')}</button>
+${panel}</div></header>`;
 }
 
 function ctas(t) {
-  return `<div class="ctas"><a class="btn btn-gold" href="${PATHS.download[t.lang]}#mac" data-os-cta data-labels='${esc(JSON.stringify(t.hero.cta))}' data-base="${PATHS.download[t.lang]}">${ico('apple', 17, 'os-ico')}<span data-os-label>${t.hero.cta.mac}</span>${ico('arrow', 16)}</a>
-<a class="btn btn-ghost" href="${GITHUB}" rel="noopener">${ico('github', 17)} ${t.hero.code}</a></div>`;
+  return `<div class="ctas"><a class="btn btn-gold" href="${PATHS.download[t.lang]}#mac" data-os-cta data-labels='${esc(JSON.stringify(t.hero.cta))}' data-base="${PATHS.download[t.lang]}">${ico('apple', 20, 'os-ico')}${roll(t.hero.cta.mac, ' data-os-label')}${ico('arrow', 20)}</a>
+<a class="btn btn-ghost" href="${GITHUB}" rel="noopener">${ico('github', 20)} ${roll(t.hero.code)}</a></div>`;
 }
 
 function footer(t) {
-  return `<span class="brand"><img src="${IMG('logo.webp')}" width="24" height="24" alt=""><b>iMiel</b></span><span>${t.footer.tagline}</span><span class="grow"></span>
-<a href="${PATHS.home[t.lang]}#services">${t.nav.features}</a><a href="${PATHS.download[t.lang]}">${t.footer.download}</a><a href="${GITHUB}" rel="noopener">${t.nav.code}</a>
-<a href="${PATHS.privacy[t.lang]}">${t.footer.privacy}</a><a href="${PATHS.legal[t.lang]}">${t.footer.legal}</a><span>© 2026 · AGPL-3.0</span>`;
+  const links = [[`${PATHS.home[t.lang]}#services`, t.nav.features], [PATHS.download[t.lang], t.footer.download], [GITHUB, t.nav.code], [PATHS.privacy[t.lang], t.footer.privacy], [PATHS.terms[t.lang], t.footer.terms], [PATHS.legal[t.lang], t.footer.legal]]
+    .map(([href, x]) => `<a href="${href}"${href.startsWith('http') ? ' rel="noopener"' : ''}>${roll(x)}</a>`).join('');
+  return `<footer class="foot2"><div class="wrap frow"><span class="brand"><img src="${IMG('logo.webp')}" width="26" height="26" alt=""><b>iMiel</b></span><span class="tag">${t.footer.tagline}</span><span class="grow"></span>
+<nav aria-label="iMiel">${links}</nav></div>
+<div class="wrap fsmall"><span>© 2026 · AGPL-3.0</span></div>
+<div class="bigname ser" aria-hidden="true">iMiel</div></footer>`;
 }
 
-const tilt = (html, l, top, r, s) => `<div class="abs tilt desk-only" style="${pos({ l, t: top })};transform:rotate(${r}deg) scale(${s});z-index:6"><div class="wshadow">${html}</div></div>`;
-const shot = (k, alt, w) => `<figure class="shot glass"${w ? ` style="width:${w}px"` : ''}><img class="th-dark" src="${IMG(`ecran-${k}-sombre.webp`)}" alt="${esc(alt)}" loading="lazy" decoding="async"><img class="th-light" src="${IMG(`ecran-${k}.webp`)}" alt="${esc(alt)}" loading="lazy" decoding="async"></figure>`;
-const phone = (img, alt, cls, style) => `<div class="phone ${cls}" style="${style}"><div class="scr"><div class="bar" aria-hidden="true"><span>9:41</span><i></i><span>●●●</span></div><img class="th-dark" src="${IMG(img + '-sombre.webp')}" alt="${esc(alt)}" loading="lazy"><img class="th-light" src="${IMG(img + '.webp')}" alt="${esc(alt)}" loading="lazy"></div></div>`;
+// Barre d'etat d'un iPhone (heure, ilot, reseau, wifi, batterie).
+const statusBar = (dark) => `<div class="sb${dark ? ' sbd' : ''}" aria-hidden="true"><span>9:41</span><i class="island"></i><span class="sbi"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx=".8" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" rx=".8" fill="currentColor"/><rect x="9" y="2.5" width="3" height="8.5" rx=".8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" rx=".8" fill="currentColor"/></svg><svg width="15" height="11" viewBox="0 0 15 11"><path d="M7.5 2.2c2.2 0 4.2.9 5.6 2.3l1.1-1.1C12.5 1.6 10.1.6 7.5.6S2.5 1.6.8 3.4l1.1 1.1C3.3 3.1 5.3 2.2 7.5 2.2Zm0 3.2c1.3 0 2.5.5 3.4 1.4L12 5.7C10.8 4.5 9.2 3.8 7.5 3.8S4.2 4.5 3 5.7l1.1 1.1c.9-.9 2.1-1.4 3.4-1.4Zm0 3.2c-.5 0-1 .2-1.3.6L7.5 10.5l1.3-1.3c-.3-.4-.8-.6-1.3-.6Z" fill="currentColor"/></svg><svg width="25" height="12" viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3.2" fill="none" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><rect x="22.6" y="4" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".45"/></svg></span></div>`;
+// Element qui flotte (rotation et echelle de base, duree et retard propres).
+let flIndex = 0;
+const flv = () => { const i = flIndex++; return `--fd:${(6.4 + (i * 1.37) % 3.4).toFixed(2)}s;--fdl:${(-((i * 2.3) % 6)).toFixed(2)}s`; };
+const tilt = (html, l, top, r, s) => `<div class="flt fl" style="left:${l}px;top:${top}px;--r:${r}deg;--s:${s};${flv()}"><div class="wshadow">${html}</div></div>`;
+// Dimensions des captures (la page ne saute pas pendant leur chargement).
+const SHOT_SIZE = { ai: [800, 978] };
+const shot = (k, alt) => { const [w, h] = SHOT_SIZE[k] || [1080, 675]; return `<figure class="shot glass"><img class="th-dark" src="${IMG(`ecran-${k}-sombre.webp`)}" alt="${esc(alt)}" width="${w}" height="${h}" loading="lazy" decoding="async"><img class="th-light" src="${IMG(`ecran-${k}.webp`)}" alt="${esc(alt)}" width="${w}" height="${h}" loading="lazy" decoding="async"></figure>`; };
+// La ligne des services passe SOUS la demo : y = 620 - 0,0003 (x - 720)^2 dans la scene de 1440 px.
+const ARC_X = [170, 360, 560, 880, 1080, 1270];
+const arcY = (x) => 620 - 0.0003 * (x - 720) ** 2;
 
 // ---------- page d'accueil ----------
 function home(t) {
+  flIndex = 0;
   const s = t.services;
-  const arc = [190, 370, 560, 880, 1070, 1250].map((x, i) => `<li><button type="button" class="pill ${i === 0 ? 'gold' : 'glass'} arc-st abs" style="${pos({ l: x, t: arcY(x).toFixed(1) + 'px' })}" data-svc="${i}" aria-pressed="${i === 0}">${ico(SVC_ICONS[i], 14, 'gico')} ${s[i]}</button></li>`).join('');
-  const screens = SVC_KEYS.map((k, i) => `<figure class="${i === 0 ? 'on' : ''}" data-screen="${i}"><img class="th-dark" src="${IMG(`ordinateur-${k}-sombre.webp`)}" alt="${esc(`iMiel — ${s[i]}`)}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async" width="1640" height="1025"><img class="th-light" src="${IMG(`ordinateur-${k}.webp`)}" alt="${esc(`iMiel — ${s[i]}`)}" loading="lazy" decoding="async" width="1640" height="1025"></figure>`).join('');
+  const arc = ARC_X.map((x, i) => `<div class="st arc below" data-st data-svc="${i}" style="left:${x}px;top:${arcY(x).toFixed(1)}px;--off:${(16 + Math.abs(0.0006 * (x - 720)) * 64).toFixed(0)}px" aria-hidden="true"><i class="dot"></i><span class="bub${i === 0 ? ' goldb' : ''}">${ico(SVC_ICONS[i], 16, 'gico')} ${s[i]}</span></div>`).join('');
+  const chips = s.map((x, i) => `<span class="mst" data-chip="${i}"><i class="dot"></i><span class="bub${i === 0 ? ' goldb' : ''}">${ico(SVC_ICONS[i], 16, 'gico')} ${x}</span></span>`).join('');
+  const screens = SVC_KEYS.map((k, i) => `<figure class="${i === 0 ? 'on' : ''}" data-screen="${i}"><img class="th-dark" src="${IMG(`ordinateur-${k}-sombre.webp`)}" alt="${esc(`iMiel — ${s[i]}`)}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async" width="1640" height="1025"><img class="th-light" src="${IMG(`ordinateur-${k}.webp`)}" alt="${esc(`iMiel — ${s[i]}`)}" ${i === 0 ? '' : 'loading="lazy" '}decoding="async" width="1640" height="1025"></figure>`).join('');
+  const cursor = `<div class="cursor" data-cursor aria-hidden="true"><span class="ripple"></span><svg width="40" height="50" viewBox="0 0 30 38"><path d="M3 2 L3 31 L10.2 24.6 L14.8 35.2 L19.6 33.1 L15 22.7 L24.6 22.4 Z" fill="#fff" stroke="#111" stroke-width="2" stroke-linejoin="round"/></svg></div>`;
+  const heroPhone = `<div class="phone2 fl" style="left:1150px;top:130px;width:176px;height:340px;${flv()}"><div class="scr2">${statusBar(false)}<img class="th-light" src="${IMG('telephone.webp')}" alt="iMiel — iPhone" width="420" height="909" loading="lazy"><img class="th-dark" src="${IMG('telephone-sombre.webp')}" alt="iMiel — iPhone" width="420" height="909" loading="lazy"></div></div>`;
+  const hero = `<section class="hero" aria-labelledby="h1">
+<div class="hero-text">
+<span class="kick" data-rv>${ico('spark', 14)} ${t.hero.kicker}</span>
+<h1 id="h1" class="ser" data-rv>${t.hero.h1[0]} <br>${t.hero.h1[1]}</h1>
+<p class="p lead" data-rv>${br(t.hero.lead)}</p>
+<div data-rv>${ctas(t)}</div>
+<p class="note" data-rv><span data-os-note data-notes='${esc(JSON.stringify(t.hero.note))}'>${t.hero.note.mac}</span> · ${t.hero.license}</p>
+</div>
+<div class="hv" data-hv>
+${arc}
+<div class="laptop2" style="left:360px;top:10px;width:720px" data-demo><div class="lid"><div class="screen" data-screens aria-live="polite">${screens}</div></div><div class="base"></div>${cursor}</div>
+${heroPhone}
+${tilt(W.agenda(false), 64, 14, 4, 0.6)}${tilt(W.suivis(false), 1112, -6, -3, 0.58)}${tilt(W.importants(false), 40, 168, -5, 0.64)}
+<div class="flt fl" style="left:30px;top:318px;--r:3deg;--s:1;${flv()}"><div class="lockchip">${W.lockCirc(3)}${W.lockRect()}</div></div>
+<div class="mchips" aria-hidden="true">${chips}</div>
+<div class="cap-wrap"><span class="pill glass carousel-cap"><b data-cap-name>${s[0]}</b> · <span data-cap-text data-caps='${esc(JSON.stringify(t.hero.captions))}' data-names='${esc(JSON.stringify(s))}'>${t.hero.captions[0]}</span> · <span class="n"><span data-cap-n>1</span> ${t.hero.of} 6</span></span></div>
+</div>
+</section>`;
+  const stats = `<section class="wrap statsbar glass" data-rv data-stats aria-label="${esc(t.stats.label)}"><div class="lbl">${t.stats.label}</div>${t.stats.items.map(([n, sp]) => `<div class="it"><b class="ser">${n}</b><span>${sp}</span></div>`).join('')}</section>`;
+
+  const rowWidget = { 0: [W.importants(false), -4, 0.78], 1: [W.agenda(false), 3, 0.8], 3: [W.suivis(false), -3, 0.78] };
   const rows = t.sec.rows.map(([h, p], i) => {
     const left = i % 2 === 0;
-    const textPos = left ? { t: RY(i), l: 120 } : { t: RY(i), l: 880, w: 440 };
-    const shotPos = { t: RY(i) + (i === 5 ? -20 : 20), l: left ? (i === 5 ? 900 : 820) : (i === 5 ? 160 : 90) };
-    const rw = { 0: [W.importants(false), 760, 2150, -4, 0.66], 1: [W.agenda(false), 470, 2600, 3, 0.7], 3: [W.suivis(false), 436, 3452, -3, 0.66] }[i];
-    return `<article class="row sec" data-row="${i}">
-<span class="pill glass station abs" style="${pos({ l: stX[i], t: stY(i) })}" data-station="${i}">${String(i + 1).padStart(2, '0')} — ${s[i]}</span>
-<div class="abs row-text" style="${pos(textPos)}"><div><h3 class="ser">${h.replace(/<br>/g, ' <br>')}</h3><p class="p">${p}</p></div></div>
-<div class="abs row-shot" style="${pos(shotPos)}">${shot(SVC_KEYS[i], `iMiel — ${s[i]}`, i === 5 ? 416 : 556)}</div>
-${rw ? tilt(rw[0], rw[1], rw[2], rw[3], rw[4]) : ''}</article>`;
+    const rw = rowWidget[i];
+    const text = `<div class="rtext"><h3 class="ser" data-rv>${br(h)}</h3><p class="p" data-rv>${p}</p>${rw ? `<div class="rw" data-rv><div class="fl rwi" style="--r:${rw[1]}deg;--s:${rw[2]};${flv()}"><div class="wshadow">${rw[0]}</div></div></div>` : ''}</div>`;
+    const sh = `<div class="rshot" data-rv><div class="fl rshot-fl" style="--r:${left ? .6 : -.6}deg;${flv()}">${shot(SVC_KEYS[i], `iMiel — ${s[i]}`)}</div></div>`;
+    const gut = `<div class="gut" aria-hidden="true"><div class="st row ${i % 2 ? 'side-l' : 'side-r'}" data-st style="--dx:${i % 2 ? 26 : -26}px"><i class="dot"></i><span class="bub">${String(i + 1).padStart(2, '0')} — ${s[i]}</span></div></div>`;
+    return `<article class="row2${left ? '' : ' rev'}" data-row="${i}">${left ? text + gut + sh : sh + gut + text}</article>`;
   }).join('');
-  const A0 = 4640, P0 = 5440, B0 = 6190, K0 = 6980, F0 = 7440, Z0 = 7900;
-  const plat = [['apple', 0], ['win', 1], ['linux', 2], ['phone', 3]].map(([k, i]) => `<span class="pill ${i === 0 ? 'gold' : 'glass'}">${ico(k, 15, i === 0 ? '' : 'gico')} ${t.apps.platforms[i]}</span>`).join('');
-  const hs = `<div class="abs hs" style="${pos({ l: 636, t: 50, w: 300, h: 612 })};border-radius:52px;background:#0b0805;border:2px solid rgba(255,200,110,.5);padding:12px;z-index:4;box-shadow:0 0 80px -16px rgba(245,170,40,.55),0 40px 80px -20px rgba(0,0,0,.9)" role="img" aria-label="${esc(t.apps.lockCaption)}">
-<div style="width:276px;height:588px;border-radius:42px;overflow:hidden;position:relative;background:radial-gradient(120% 80% at 30% 10%,#7a4a10,#2a1a0a 55%,#120c06)">
-<div style="display:flex;justify-content:space-between;padding:14px 26px 0;font-size:13px;font-weight:600;color:#fff;font-family:${W.WF}"><span>9:41</span><span style="width:90px;height:26px;border-radius:20px;background:#000;margin-top:-4px"></span><span>●●●</span></div>
-<div style="position:absolute;left:12px;top:56px;transform:scale(.77);transform-origin:top left">${W.agenda(false)}</div>
-<div style="position:absolute;left:12px;top:186px;transform:scale(.77);transform-origin:top left">${W.importants(false)}</div>
-<div style="position:absolute;left:12px;top:316px;transform:scale(.77);transform-origin:top left">${W.suivis(false)}</div>
-<div style="position:absolute;left:22px;top:452px;display:grid;grid-template-columns:repeat(4,50px);gap:16px 14px">${[0, 1, 2, 3, 4, 5, 6, 7].map((i) => i === 0 ? `<img src="${IMG('logo.webp')}" width="50" height="50" style="border-radius:12px" alt="">` : '<span style="width:50px;height:50px;border-radius:12px;background:rgba(255,236,200,.13);border:1px solid rgba(255,236,200,.12)"></span>').join('')}</div>
-</div></div>`;
-  const lock = `<div class="abs lockp" style="${pos({ l: 976, t: 110, w: 250, h: 510 })};border-radius:44px;background:#0b0805;border:2px solid rgba(255,200,110,.4);padding:10px;z-index:3;box-shadow:0 40px 80px -20px rgba(0,0,0,.9)" role="img" aria-label="${esc(t.apps.lockCaption)}">
-<div style="width:226px;height:486px;border-radius:36px;overflow:hidden;position:relative;background:radial-gradient(100% 70% at 50% 20%,#4a3215,#140d06);color:#fff;font-family:${W.WF};text-align:center">
-<div style="margin-top:46px;font-size:13px;font-weight:600;opacity:.85">${t.apps.lockDate}</div><div style="font-size:72px;font-weight:600;line-height:1;margin-top:2px;letter-spacing:-2px">8:31</div>
-<div style="display:flex;justify-content:center;align-items:center;gap:14px;margin-top:14px">${W.lockCirc(3)}<div style="text-align:left">${W.lockRect()}</div></div>
-<div style="position:absolute;bottom:22px;left:0;right:0;font-size:11px;opacity:.6">${t.apps.lockCaption}</div></div></div>`;
-  const nodes = t.privacy.nodes.map(([b, sp], i) => `${i ? `<div class="link-dash" aria-hidden="true"><span>${ico('lock', 13)}</span></div>` : ''}<div class="node glass"><div class="ic">${ico(['laptop', 'cloud', 'phone'][i], 24)}</div><b>${b}</b><span>${sp}</span></div>`).join('');
-  const tiles = [[120, B0 + 170, 600, 250, 'spark', true], [740, B0 + 170, 280, 250, 'shield'], [1040, B0 + 170, 280, 250, 'search'], [120, B0 + 440, 390, 230, 'eyeoff'], [530, B0 + 440, 390, 230, 'laptop'], [940, B0 + 440, 380, 230, 'code']]
-    .map(([l, top, w, h, ic, g], i) => `<div class="abs tile ${g ? 'gold-tile' : 'glass'}" style="${pos({ l, t: top, w, h })}"><div class="ic">${ico(ic, 20)}</div><h3 class="ser">${t.why.tiles[i][0]}</h3><p>${t.why.tiles[i][1]}</p>${g ? '<div class="ser big" aria-hidden="true">0 €</div>' : ''}</div>`).join('');
-  const faq = t.faq.items.map(([q, a], i) => `<details class="glass"${i === 0 ? ' open' : ''}><summary>${q}${ico('plus', 16, 'plus')}${ico('minus', 16, 'minus')}</summary><p>${a}</p></details>`).join('');
+  const services = `<section class="wrap sect" id="services" aria-labelledby="h-services"><div class="sec-head"><span class="kick" data-rv>${ico('spark', 14)} ${t.sec.kicker}</span><h2 id="h-services" class="ser h2" data-rv>${br(t.sec.title)}</h2><p class="p" data-rv>${t.sec.sub}</p></div>${rows}</section>`;
+
+  const hs = `<div class="phone3 hs fl" style="${flv()}" role="img" aria-label="${esc(t.apps.lockCaption)}"><div class="scr3 wall1">${statusBar(true)}
+<div class="wgs">${['agenda', 'importants', 'suivis'].map((k) => `<div class="wg">${W[k](false)}</div>`).join('')}</div>
+<div class="spot">${ico('search', 13)} Rechercher</div><i class="homebar"></i></div></div>`;
+  const lock = `<div class="phone3 lk fl" style="${flv()}" role="img" aria-label="${esc(t.apps.lockCaption)}"><div class="scr3 wall2">${statusBar(true)}
+<div class="lkic">${ico('lock', 14)}</div><div class="lkdate">${t.apps.lockDate}</div><div class="lktime">8:31</div>
+<div class="lkw"><div class="lkc">${ico('mail', 14)}<b>3</b></div><div class="lkr"><b>10:00</b><b>Point équipe</b><span>Visio · dans 1 h 29 min</span></div></div>
+<div class="notif"><img src="${IMG('logo.webp')}" alt=""><div><div class="nh"><b>iMiel</b><span>maintenant</span></div><b>Camille Martin</b><span>Devis rénovation — version signée</span></div></div>
+<div class="lkb l">${ico('flash', 17)}</div><div class="lkb r">${ico('cam', 17)}</div><i class="homebar"></i></div></div>`;
+  const plat = [['apple', 0], ['win', 1], ['linux', 2], ['phone', 3]].map(([k, i]) => `<a class="pill2 ${i === 0 ? 'goldp' : 'ghostp'} big" href="${PATHS.download[t.lang]}#${['mac', 'windows', 'linux', 'iphone'][i]}">${ico(k, 18)} ${roll(t.apps.platforms[i])}</a>`).join('');
+  const apps = `<section class="wrap sect apps2 glass" id="apps" data-apps aria-labelledby="h-apps"><div class="atext"><span class="kick" data-rv>${ico('phone', 14)} ${t.apps.kicker}</span><h2 id="h-apps" class="ser h2" data-rv>${br(t.apps.title)}</h2><p class="p" data-rv>${t.apps.text}</p><div class="plats" data-rv>${plat}</div><small data-rv>${t.apps.note}</small></div><div class="aphones">${hs}${lock}</div></section>`;
+
+  const nodes = t.privacy.nodes.map(([b, sp], i) => `${i ? `<div class="lk2" aria-hidden="true"><span>${ico('lock', 15)}</span></div>` : ''}<div class="node glass" data-st data-node="${i}"><div class="ic">${ico(['server', 'cloud', 'phone'][i], 24)}</div><b>${b}</b><span>${sp}</span></div>`).join('');
+  const privacy = `<section class="wrap sect privacy2" aria-labelledby="h-priv"><div class="sec-head narrow" data-privhead><span class="kick" data-rv>${ico('lock', 14)} ${t.privacy.kicker}</span><h2 id="h-priv" class="ser h2" data-rv>${br(t.privacy.title)}</h2><p class="p" data-rv>${t.privacy.sub}</p></div>
+<div class="nodes2" data-nodes>${nodes}</div>
+<div class="glass kit2" data-rv>${ico('key', 26)}<p><b>${t.privacy.kitTitle}</b> ${t.privacy.kit}</p></div></section>`;
+
+  const carte = (c, gold, href) => `<div class="prix-wrap" data-rv><article class="prix-carte ${gold ? 'gold-tile' : 'glass'} fl" style="${flv()}"><div class="prix-tete"><h3 class="ser">${c.name}</h3><span class="pill${gold ? '' : ' glass'}">${c.badge}</span></div>
+<p class="prix"><b class="ser">${c.price}</b> <span>${c.per}</span></p><ul>${c.items.map((x) => `<li>${ico('check', 15)}<span>${x}</span></li>`).join('')}</ul>
+<a class="btn ${gold ? 'btn-ghost' : 'btn-gold'}" href="${href}"${href.startsWith('http') ? ' rel="noopener"' : ''}>${roll(c.cta)} ${ico('arrow', 18)}</a><small>${c.note}</small></article></div>`;
+  const tarifs = `<section class="wrap sect" id="tarifs" data-tarifs aria-labelledby="h-tarifs"><div class="sec-head"><span class="kick" data-rv>${ico('spark', 14)} ${t.pricing.kicker}</span><h2 id="h-tarifs" class="ser h2" data-rv>${br(t.pricing.title)}</h2><p class="p" data-rv>${t.pricing.sub}</p></div><div class="tarifs2">${carte(t.pricing.cloud, true, APP_WEB)}${carte(t.pricing.free, false, PATHS.download[t.lang])}</div></section>`;
+
+  const tile = (i, ic, g) => `<div class="tile-wrap" data-rv><div class="tile ${g ? 'gold-tile' : 'glass'} fl" style="${flv()}"><div class="ic">${ico(ic, 20)}</div><h3 class="ser">${t.why.tiles[i][0]}</h3><p>${t.why.tiles[i][1]}</p></div></div>`;
+  const why = `<section class="wrap sect" data-why aria-labelledby="h-why"><div class="sec-head"><span class="kick" data-rv>${ico('spark', 14)} ${t.why.kicker}</span><h2 id="h-why" class="ser h2" data-rv>${br(t.why.title)}</h2></div>
+<div class="bento2 b1">${tile(0, 'spark', true)}${tile(1, 'shield')}${tile(2, 'search')}</div><div class="bento2 b2">${tile(3, 'eyeoff')}${tile(4, 'laptop')}${tile(5, 'code')}</div></section>`;
+
   const code = [['git clone', GITHUB], ['cd', 'imiel'], ['cp', '.env.example .env'], ['docker compose', 'up -d'], ['#', t.code.comment]]
     .map(([a, b], i) => `<span class="ln">${i + 1}</span>  ${a === '#' ? `<span class="cm"># ${b}</span>` : `<span class="kw">${a}</span> ${b}`}`).join('\n');
-  const stats = t.stats.items.map(([n, sp]) => `<div class="it"><b class="ser">${n}</b><span>${sp}</span></div>`).join('');
-  return `${head(t, 'home', {})}<body>
-<main class="stage" style="--stage-h:${STAGE_H}px" data-stage>
+  const codeS = `<section class="wrap sect code2" id="code" data-code aria-labelledby="h-code"><div class="code-text"><span class="kick" data-rv>${ico('code', 14)} ${t.code.kicker}</span><h2 id="h-code" class="ser h2" data-rv>${br(t.code.title)}</h2><p class="p" data-rv>${t.code.text}</p>
+<div class="btns" data-rv><a class="btn btn-ghost" href="${GITHUB}" rel="noopener">${ico('github', 20)} ${roll(t.code.github)}</a><a class="btn btn-ghost" href="${GITHUB}#readme" rel="noopener">${roll(t.code.guide)}</a></div></div>
+<div class="code-wrap" data-rv><div class="code-card fl" style="${flv()}"><div class="dots" aria-hidden="true"><i style="background:#ef5b4b"></i><i style="background:#f5b22a"></i><i style="background:#45c46b"></i></div><pre><code>${code}</code></pre></div></div></section>`;
+
+  const faq = `<section class="wrap sect faq2" id="faq" data-faq aria-labelledby="h-faq"><div class="sec-head"><span class="kick" data-rv>FAQ</span><h2 id="h-faq" class="ser h2" data-rv>${br(t.faq.title)}</h2></div>
+<div class="flist" data-flist>${t.faq.items.map(([q, a], i) => `<details class="glass${i === 0 ? ' shown' : ''}" data-rv${i === 0 ? ' open' : ''}><summary>${q}<span class="pm" aria-hidden="true">${ico('plus', 18)}</span></summary><div class="ans"><div><p>${a}</p></div></div></details>`).join('')}</div></section>`;
+  const final = `<section class="wrap sect final2" data-final aria-labelledby="h-final"><img src="${IMG('logo.webp')}" width="64" height="64" alt="" data-final-logo><h2 id="h-final" class="ser" data-rv>${br(t.final.title)}</h2><div data-rv>${ctas(t)}</div></section>`;
+
+  return `${head(t, 'home', {})}<body class="home">
 ${light}${nav(t, 'home')}
-<section class="abs center hero-text" style="${pos({ t: 118 })}" aria-labelledby="h1">
-<span class="kick">${ico('spark', 12)} ${t.hero.kicker}</span>
-<h1 id="h1" class="ser">${t.hero.h1[0]}<br>${t.hero.h1[1]}</h1>
-<p class="p lead">${t.hero.lead.replace(/<br>/g, ' <br>')}</p>
-${ctas(t)}
-<p class="note"><span data-os-note data-notes='${esc(JSON.stringify(t.hero.note))}'>${t.hero.note.mac}</span> · ${t.hero.license}</p>
-</section>
-<ul class="arc-list" role="list" aria-label="${esc(t.sec.kicker)}">${arc}</ul>
-<div class="hero-visual">
-<div class="abs laptop" style="${pos({ l: 300, t: 780, w: 840 })};z-index:2"><div class="lid"><div class="screen" data-carousel aria-live="polite">${screens}</div></div><div class="base"></div></div>
-${phone('telephone', 'iMiel — iPhone', 'abs', `${pos({ l: 1150, t: 905, w: 210, h: 428 })};z-index:4`)}
-</div>
-${tilt(W.importants(false), 26, 872, -5, 0.64)}${tilt(W.agenda(false), 336, 716, 4, 0.62)}${tilt(W.suivis(false), 752, 664, -3, 0.58)}
-<div class="abs desk-only" style="${pos({ l: 64, t: 1118 })};transform:rotate(3deg);z-index:6"><div class="lockchip">${W.lockCirc(3)}${W.lockRect()}</div></div>
-<div class="abs center cap-wrap" style="${pos({ t: 1312 })}"><span class="pill glass carousel-cap"><b data-cap-name>${s[0]}</b> · <span data-cap-text data-caps='${esc(JSON.stringify(t.hero.captions))}' data-names='${esc(JSON.stringify(s))}'>${t.hero.captions[0]}</span> · <span class="n"><span data-cap-n>1</span> ${t.hero.of} 6</span></span></div>
-<div class="abs glass stats" style="${pos({ t: 1366, l: 64, r: 64 })}"><div class="lbl">${t.stats.label}</div>${stats}</div>
-<section id="services" aria-labelledby="h-services">
-<div class="abs center sec-head" style="${pos({ t: 1560 })}"><span class="kick">${ico('spark', 12)} ${t.sec.kicker}</span><h2 id="h-services" class="ser h2">${t.sec.title}</h2><p class="p">${t.sec.sub}</p></div>
-${rows}
-</section>
-<section id="apps" class="abs glass apps-card" style="${pos({ t: A0, l: 64, r: 64, h: 700 })}" aria-labelledby="h-apps">
-<div class="abs apps-text" style="${pos({ l: 64, t: 90, w: 520 })}"><span class="kick">${ico('phone', 12)} ${t.apps.kicker}</span><h2 id="h-apps" class="ser h2">${t.apps.title}</h2><p class="p">${t.apps.text}</p><div class="plats">${plat}</div><small>${t.apps.note}</small></div>
-<div class="apps-phones">${hs}${lock}</div>
-</section>
-<section class="privacy" aria-labelledby="h-priv">
-<div class="abs center sec-head" style="${pos({ t: P0 })}"><span class="kick">${ico('lock', 12)} ${t.privacy.kicker}</span><h2 id="h-priv" class="ser h2">${t.privacy.title}</h2><p class="p">${t.privacy.sub}</p></div>
-<div class="abs center nodes" style="${pos({ t: P0 + 300 })}">${nodes}</div>
-<div class="abs glass kit" style="${pos({ t: P0 + 560, l: 330, w: 780 })}">${ico('key', 26)}<p><b>${t.privacy.kitTitle}</b> ${t.privacy.kit}</p></div>
-</section>
-<section class="why" aria-labelledby="h-why">
-<div class="abs center sec-head" style="${pos({ t: B0 })}"><span class="kick">${ico('spark', 12)} ${t.why.kicker}</span><h2 id="h-why" class="ser h2">${t.why.title}</h2></div>
-<div class="bento">${tiles}</div>
-</section>
-<section id="code" class="code-wrap" aria-labelledby="h-code">
-<div class="abs code-text" style="${pos({ t: K0, l: 120, w: 520 })}"><span class="kick">${ico('code', 12)} ${t.code.kicker}</span><h2 id="h-code" class="ser h2">${t.code.title}</h2><p class="p">${t.code.text}</p>
-<div class="btns"><a class="btn btn-ghost" href="${GITHUB}" rel="noopener">${ico('github', 16)} ${t.code.github}</a><a class="btn btn-ghost" href="${GITHUB}#readme" rel="noopener" style="color:var(--sub)">${t.code.guide}</a></div></div>
-<div class="abs code-card" style="${pos({ t: K0 + 10, l: 760, w: 560 })}"><div class="dots" aria-hidden="true"><i style="background:#ef5b4b"></i><i style="background:#f5b22a"></i><i style="background:#45c46b"></i></div><pre><code>${code}</code></pre></div>
-</section>
-<section id="faq" class="faq" aria-labelledby="h-faq">
-<div class="abs center head" style="${pos({ t: F0 })}"><span class="kick">FAQ</span><h2 id="h-faq" class="ser">${t.faq.title}</h2></div>
-<div class="abs list" style="${pos({ t: F0 + 150, l: 330, w: 780 })}">${faq}</div>
-</section>
-<section class="abs center final" style="${pos({ t: Z0 })}" aria-labelledby="h-final"><img src="${IMG('logo.webp')}" width="54" height="54" alt="" data-final-logo><h2 id="h-final" class="ser">${t.final.title}</h2>${ctas(t)}</section>
-<footer class="abs foot" style="${pos({ t: STAGE_H - 70, l: 64, r: 64, h: 50 })}">${footer(t)}</footer>
-${thread}
+<main data-stage>
+${hero}
+${stats}
+${services}
+${apps}
+${privacy}
+${tarifs}
+${why}
+${codeS}
+${faq}
+${final}
 </main>
+${footer(t)}
+${thread}
 <script src="/assets/app.js?v=${JS_V}" defer></script>
 </body></html>`;
 }
 
 // ---------- pages secondaires ----------
 function simplePage(t, page, title, body, description) {
-  return `${head(t, page, { title, description })}<body>
-<div class="stage-flat">${nav(t, page)}<main class="page">${body}</main>
-<footer class="page"><div class="foot">${footer(t)}</div></footer></div>
+  return `${head(t, page, { title, description })}<body class="flat">
+${light}${nav(t, page)}<main class="page">${body}</main>
+${footer(t)}
 <script src="/assets/app.js?v=${JS_V}" defer></script></body></html>`;
 }
 
 function download(t) {
   const d = t.dl;
   const card = (id, ic, [name, text, file], href, soon) => `<article class="dl-card glass" id="${id}" data-dl="${id}"><div class="ic">${ico(ic, 22)}</div><h2 class="ser">${name}</h2><p>${text}</p><small>${file}</small>
-${soon ? `<a class="btn btn-ghost" aria-disabled="true">${d.soon}</a>` : `<a class="btn btn-gold" href="${href}" rel="noopener">${ico('arrow', 15)} ${d.get}</a>`}</article>`;
+${soon ? `<a class="btn btn-ghost" aria-disabled="true">${d.soon}</a>` : `<a class="btn btn-gold" href="${href}" rel="noopener">${ico('arrow', 18)} ${d.get}</a>`}</article>`;
   const smart = (step) => `<div class="smart" aria-hidden="true"><h3>${d.smartTitle}</h3><p>${d.smartText}</p>
 ${step === 1 ? `<span class="more hl">${d.smartMore}</span><div class="bt"><span>${d.smartNo}</span></div>` : `<div class="meta">${d.smartApp}<br>${d.smartPub}</div><div class="bt"><span class="hl">${d.smartRun}</span><span>${d.smartNo}</span></div>`}</div>`;
   const body = `<h1 class="ser">${d.title}</h1><p class="sub">${d.sub}</p>
-<div class="dl-grid">${card('mac', 'apple', d.mac, RELEASES)}${card('windows', 'win', d.windows, RELEASES)}${card('linux', 'linux', d.linux, RELEASES)}${card('iphone', 'phone', d.iphone, '', true)}</div>
+<div class="dl-grid">${card('mac', 'apple', d.mac, `${RELEASES}?platform=mac`)}${card('windows', 'win', d.windows, `${RELEASES}?platform=windows`)}${card('linux', 'linux', d.linux, `${RELEASES}?platform=linux`)}${card('iphone', 'phone', d.iphone, '', true)}${card('web', 'globe', d.web.slice(0, 3), APP_WEB)}</div>
 <p class="dl-note">${d.releases}</p>
 <section class="win glass" id="windows-premier-lancement"><h2 class="ser">${d.winTitle}</h2><p>${d.winText}</p>
 <div class="win-steps"><div class="win-step"><b>1. ${d.winSteps[0]}</b>${smart(1)}</div><div class="win-step"><b>2. ${d.winSteps[1]}</b>${smart(2)}</div></div></section>
-<article class="dl-card glass" style="margin-top:26px"><div class="ic">${ico('server', 22)}</div><h2 class="ser">${d.server[0]}</h2><p>${d.server[1]}</p><a class="btn btn-ghost" href="${GITHUB}#readme" rel="noopener">${ico('github', 15)} ${d.server[2]}</a></article>`;
+<article class="dl-card glass" style="margin-top:26px"><div class="ic">${ico('server', 22)}</div><h2 class="ser">${d.server[0]}</h2><p>${d.server[1]}</p><a class="btn btn-ghost" href="${GITHUB}#readme" rel="noopener">${ico('github', 18)} ${d.server[2]}</a></article>`;
   return simplePage(t, 'download', d.title, body, d.sub);
 }
 
@@ -291,6 +292,7 @@ for (const l of LANGS) {
   write(PATHS.download[l], download(t));
   write(PATHS.privacy[l], legalLike(t, 'privacy', t.privacyPage));
   write(PATHS.legal[l], legalLike(t, 'legal', t.legalPage));
+  write(PATHS.terms[l], legalLike(t, 'terms', t.termsPage));
 }
 // 404
 fs.writeFileSync(path.join(OUT, '404.html'), simplePage(T.fr, 'home', 'Page introuvable', `<h1 class="ser">Page introuvable</h1><p class="sub">Cette page n’existe pas ou plus. <a href="/" style="color:var(--g)">Retour à l’accueil</a> · <a href="/en/" style="color:var(--g)">Home</a></p>`, 'Page introuvable'));
@@ -303,14 +305,14 @@ fs.writeFileSync(path.join(OUT, 'llms.txt'), `# iMiel
 
 > ${f.description}
 
-iMiel est un logiciel libre (licence AGPL-3.0) et gratuit, sans abonnement ni publicité. Il réunit six services dans une seule application : ${f.services.join(', ')}.
+iMiel réunit six services dans une seule application : ${f.services.join(', ')}. Deux formules : iMiel Cloud (5,99 CHF par mois, 14 jours offerts sans carte bancaire), qui relie ordinateur, iPhone et web sans rien régler ; et la version libre (licence AGPL-3.0), gratuite, sur un seul ordinateur.
 
 ## En bref
 - Applications : Mac, Windows, Linux et iPhone (avec widgets d'écran d'accueil et d'écran verrouillé).
-- Les données (mails, contacts, rendez-vous, réglages) restent sur l'ordinateur de l'utilisateur.
-- Un compte iMiel facultatif relie plusieurs appareils ; tout ce qui transite est chiffré avec une clé que seul l'utilisateur détient (mot de passe principal + clé secrète, kit de secours).
+- Applications : Mac, Windows, Linux, iPhone et web (app.getimiel.com).
+- Le serveur d'iMiel Cloud relève les boîtes au moment où les appareils les demandent, transmet, puis oublie : il ne garde aucun mail. Il garde le compte, l'abonnement et les réglages (chiffrés) ; ils sont effacés 30 jours après l'arrêt de l'abonnement.
 - L'assistant, les résumés et les traductions utilisent la clé d'IA de l'utilisateur ; sans clé, ils restent éteints.
-- Gmail se relie par un mot de passe d'application ; Google Agenda par une connexion limitée à l'agenda.
+- Gmail et Outlook se relient d'un clic (iMiel Cloud) ; les autres boîtes avec l'adresse et le mot de passe, réglages trouvés automatiquement.
 - Le code est public : ${GITHUB}
 - Langues : français, anglais, allemand, italien.
 
@@ -318,6 +320,7 @@ iMiel est un logiciel libre (licence AGPL-3.0) et gratuit, sans abonnement ni pu
 - Accueil : ${SITE}/ (en : ${SITE}/en/, de : ${SITE}/de/, it : ${SITE}/it/)
 - Télécharger : ${SITE}${PATHS.download.fr}
 - Confidentialité : ${SITE}${PATHS.privacy.fr}
+- Conditions de vente : ${SITE}${PATHS.terms.fr}
 - Mentions légales : ${SITE}${PATHS.legal.fr}
 - Contact : ${CONTACT}
 `);

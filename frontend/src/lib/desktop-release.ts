@@ -4,7 +4,9 @@
 // l'URL signee temporaire renvoyee par GitHub (le token ne fuite jamais cote
 // client).
 
-const REPO = process.env.GITHUB_RELEASES_REPO || "haikostudio/imiel";
+// Depot de TRAVAIL prive (renomme imiel-dev le 2026-11-26 : "haikostudio/imiel"
+// est desormais la copie publique, sans releases).
+const REPO = process.env.GITHUB_RELEASES_REPO || "haikostudio/imiel-dev";
 const TOKEN =
   process.env.GITHUB_RELEASES_TOKEN || process.env.GITHUB_TOKEN || "";
 const TAG_PREFIX = process.env.GITHUB_RELEASES_TAG_PREFIX || "desktop-v";

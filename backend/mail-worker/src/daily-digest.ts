@@ -27,7 +27,7 @@
 import { backgroundModel } from "./ai-models";
 import { ImapFlow } from "imapflow";
 import nodemailer from "nodemailer";
-import { aiFetch, parisDay } from "./ai-budget";
+import { aiFetch, parisDay, serverOpenRouterKey } from "./ai-budget";
 import { buildImapConfig } from "./imap";
 import {
   getUserDailyDigestInfo,
@@ -247,7 +247,7 @@ export function parseAiSelection(
 }
 
 async function aiSelect(cands: Candidate[]): Promise<{ i: number; kind: MailKind; summary: string }[] | null> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = serverOpenRouterKey();
   if (!apiKey || !cands.length) return null;
   try {
     const res = await aiFetch("daily-digest", {

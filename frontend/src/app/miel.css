@@ -550,11 +550,21 @@
   /* Agenda : meme presentation, un peu d'air autour de la grille. */
   [data-design="miel"] [data-ref="calendar-page"] { padding: 2px 12px 0; }
 
-  /* Barre du pied : verre clair chaud, sans filet ; bouton actif en miel. */
-  [data-design="miel"] [data-ref="mobile-footer-bar"] {
-    background: color-mix(in oklab, var(--background) 82%, transparent);
+  /* Pied du telephone : plus de barre (carte « Menu du bas en bouton
+     flottant »). Le nav reste transparent ; seule la PILULE des boutons de
+     page (Newsletters, Suivi) est une pastille blanche ombree, OPAQUE (en
+     sombre, un fond translucide laisserait lire les mails au travers) ;
+     bouton actif en miel. Le rond Rediger garde son degrade (compose-fab-disc). */
+  [data-design="miel"] [data-ref="mobile-footer-pill"] {
+    background: var(--miel-chip);
     border-color: transparent;
-    box-shadow: 0 -10px 30px -18px rgba(150, 100, 20, 0.35);
+    box-shadow: var(--miel-chip-shadow), 0 14px 34px -14px rgba(150, 100, 20, 0.45);
+  }
+  /* Sombre : la pastille est presque de la couleur du bloc de liste ; un
+     lisere clair la detache. */
+  [data-design="miel"].dark [data-ref="mobile-footer-pill"] {
+    border-color: rgba(255, 236, 200, 0.12);
+    box-shadow: var(--miel-chip-shadow), 0 14px 34px -12px rgba(0, 0, 0, 0.7);
   }
   [data-design="miel"] [data-ref="mobile-footer-bar"] .mobile-footer-item[data-active] {
     background: var(--miel-active-grad);

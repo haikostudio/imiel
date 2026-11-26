@@ -1,5 +1,6 @@
 "use client";
 
+import { useIaDisponible } from "@/lib/ai-settings";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   Reply,
@@ -276,6 +277,7 @@ function LinkifiedText({ text }: { text: string }) {
 }
 
 export function MessageAccordion({ message, onReply, receipts = null, onViewsOpenChange, draft = false, onOpenDraft, isMine = false, isConversationOpener = false, seriesContinuation = false, senderAccount = null, myEmails = NO_EMAILS }: MessageAccordionProps) {
+  const iaDispo = useIaDisponible();
   const t = useT();
   const isMobile = useIsMobile();
   const isMiel = useIsMiel();
@@ -662,7 +664,7 @@ export function MessageAccordion({ message, onReply, receipts = null, onViewsOpe
       label: isNewsletterSource ? t("newsletters.unfollowSource") : t("newsletters.followSource"),
       onSelect: handleToggleNewsletterSource,
     },
-    { type: "item", key: "translate", Icon: Languages, label: t("message.translate"), onSelect: handleTranslate },
+    ...(iaDispo ? [{ type: "item" as const, key: "translate", Icon: Languages, label: t("message.translate"), onSelect: handleTranslate }] : []),
     { type: "item", key: "print", Icon: Printer, label: t("message.print"), onSelect: handlePrint },
     { type: "item", key: "download", Icon: Download, label: t("message.downloadMessage"), onSelect: handleDownload },
     { type: "item", key: "original", Icon: Code, label: t("message.showOriginal"), onSelect: () => setSourceOpen(true) },

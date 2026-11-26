@@ -1,0 +1,9 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "resources": {
+      "ressources/pile/": "pile/"
+    },
+    "longDescription": "iMiel : votre courrier, votre agenda et vos contacts, gardes sur votre ordinateur. iMiel releve vos boites lui-meme, sans serveur."
+  }
+}

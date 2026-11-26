@@ -1,5 +1,6 @@
 "use client";
 
+import { useIaDisponible } from "@/lib/ai-settings";
 import { Bot } from "lucide-react";
 import { useMailStore } from "@/lib/stores/mail-store";
 import { useT } from "@/lib/i18n";
@@ -13,9 +14,11 @@ import { useT } from "@/lib/i18n";
  */
 export function MielAiFab() {
   const t = useT();
+  const iaDispo = useIaDisponible();
   const toggleAiChat = useMailStore((s) => s.toggleAiChat);
   const aiChatOpen = useMailStore((s) => s.aiChatOpen);
   if (aiChatOpen) return null;
+  if (!iaDispo) return null;
   return (
     <button
       type="button"

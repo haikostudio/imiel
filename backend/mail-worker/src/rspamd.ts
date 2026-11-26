@@ -1,3 +1,4 @@
+import { serviceDisabled } from "./local-mode";
 const RSPAMD_URL = process.env.RSPAMD_URL || "http://127.0.0.1:11334";
 // Score Rspamd a partir duquel un mail est considere spam meme sans LLM
 // (filet de securite quand le classifieur LLM est indisponible/desactive).
@@ -101,6 +102,8 @@ export async function checkSpam(
  * Check if Rspamd is reachable. Result is cached for 60s.
  */
 export async function isRspamdAvailable(): Promise<boolean> {
+  // App d'ordinateur : pas de rspamd sur la machine (RSPAMD_URL=off).
+  if (serviceDisabled(process.env.RSPAMD_URL)) return false;
   const now = Date.now();
   if (cachedAvailable !== null && now - lastHealthCheck < HEALTH_CHECK_INTERVAL_MS) {
     return cachedAvailable;

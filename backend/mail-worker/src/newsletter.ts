@@ -27,7 +27,7 @@ import {
 import { sendNewsletterAlertNotification, sendNewsletterNotification } from "./push";
 import { logNewsletterActivity } from "./activity";
 
-import { aiFetch } from "./ai-budget";
+import { aiFetch, serverOpenRouterKey } from "./ai-budget";
 import {
   canonicalTags,
   invalidateKnownTags,
@@ -380,7 +380,7 @@ export async function processNewsletter(args: {
     if (existing) return;
 
     const userKey = await getUserOpenRouterKey(args.userId);
-    const apiKey = userKey || process.env.OPENROUTER_API_KEY || "";
+    const apiKey = userKey || serverOpenRouterKey() || "";
     if (!apiKey) {
       console.warn(`[newsletter] FAIL ${args.messageId} : pas de cle OpenRouter`);
       return;
@@ -516,7 +516,7 @@ export async function processNewsletter(args: {
  */
 export async function regenerateNewsletterSummary(post: PBNewsletterPost): Promise<boolean> {
   const userKey = await getUserOpenRouterKey(post.user);
-  const apiKey = userKey || process.env.OPENROUTER_API_KEY || "";
+  const apiKey = userKey || serverOpenRouterKey() || "";
   if (!apiKey) return false;
   const msg = await getMessage(post.message).catch(() => null);
   if (!msg) return false;
@@ -639,7 +639,7 @@ export async function backfillNewsletterTitles(opts: {
     return { candidates, updated: 0, calls: batches };
   }
   for (const [userId, list] of byUser) {
-    const apiKey = (await getUserOpenRouterKey(userId)) || process.env.OPENROUTER_API_KEY || "";
+    const apiKey = (await getUserOpenRouterKey(userId)) || serverOpenRouterKey() || "";
     if (!apiKey) {
       log(`SKIP user=${userId} : pas de cle OpenRouter`);
       continue;
@@ -731,7 +731,7 @@ export function startNewsletterBackfill(
   void (async () => {
     try {
       const apiKey =
-        (await getUserOpenRouterKey(userId)) || process.env.OPENROUTER_API_KEY || "";
+        (await getUserOpenRouterKey(userId)) || serverOpenRouterKey() || "";
       if (!apiKey) {
         state.error = "OpenRouter API key manquante";
         return;

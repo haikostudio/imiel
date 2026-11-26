@@ -1,5 +1,7 @@
 "use client";
 
+import { EDITION_POUR_TOUS } from "@/lib/ai-settings";
+import { isDesktopApp, openExternalUrl } from "@/lib/desktop";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CalendarDays, RefreshCw, CheckCircle2, Link2, AlertCircle, Mail, Trash2, Star } from "lucide-react";
@@ -58,7 +60,14 @@ export default function CalendarSettings() {
       const res = await fetch(`/worker/oauth/google/url?userId=${userId}&origin=${encodeURIComponent(getOAuthRedirectOrigin())}`);
       const data = await res.json();
       if (data.url) {
-        window.location.href = data.url;
+        // App d'ordinateur : Google refuse les fenetres integrees, l'accord se
+        // donne dans le navigateur du systeme (retour sur 127.0.0.1).
+        if (EDITION_POUR_TOUS && isDesktopApp()) {
+          openExternalUrl(data.url);
+          toast.info(t("calendar.connectInBrowser"));
+        } else {
+          window.location.href = data.url;
+        }
       } else {
         toast.error(data.error || t("account.oauthError"));
       }

@@ -26,5 +26,17 @@
     "category": "Productivity",
     "shortDescription": "iMiel - votre boite mail",
     "longDescription": "iMiel : votre boite mail moderne, disponible sur le bureau."
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQwMjgyODk5QzkyNUZDMjMKUldRai9DWEptU2dvUVBoNTFSTFVxTEI5Y1piUWVhTnFwaFZRL052Ly9vR3JkOXpKNFk2SC9BbkIK",
+      "endpoints": [
+        "https://getimiel.com/mises-a-jour/latest.json",
+        "https://sync.getimiel.com/v1/mises-a-jour/{{target}}/{{arch}}/{{current_version}}"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }
